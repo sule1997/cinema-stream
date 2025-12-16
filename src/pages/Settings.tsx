@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -13,13 +15,31 @@ import {
   Globe
 } from 'lucide-react';
 
-// Mock user state
-const mockUser = null;
-
 const Settings = () => {
   const navigate = useNavigate();
+  const { user, profile, role, isLoading, signOut } = useAuth();
+  const { toast } = useToast();
 
-  if (!mockUser) {
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logged Out",
+      description: "You have been signed out successfully.",
+    });
+    navigate('/');
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout showTopNav={false}>
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!user) {
     return (
       <MainLayout showTopNav={false}>
         <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 animate-fade-in">
@@ -83,7 +103,7 @@ const Settings = () => {
         </Card>
       </div>
 
-      <Button variant="destructive" className="w-full">
+      <Button variant="destructive" className="w-full" onClick={handleLogout}>
         <LogOut className="h-4 w-4 mr-2" />
         Logout
       </Button>
@@ -94,7 +114,23 @@ const Settings = () => {
     <div className="p-4 space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold">Settings</h1>
       
-      {/* User Info */}
+      {/* User Info Card */}
+      <Card className="bg-card">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium">{profile?.username || 'User'}</p>
+              <p className="text-sm text-muted-foreground">{profile?.phone}</p>
+              <p className="text-xs text-accent capitalize">{role}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Account Settings */}
       <div className="space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
           Account
@@ -107,7 +143,7 @@ const Settings = () => {
         </Card>
       </div>
 
-      <Button variant="destructive" className="w-full">
+      <Button variant="destructive" className="w-full" onClick={handleLogout}>
         <LogOut className="h-4 w-4 mr-2" />
         Logout
       </Button>
@@ -116,7 +152,7 @@ const Settings = () => {
 
   return (
     <MainLayout showTopNav={false}>
-      {mockUser?.role === 'admin' ? renderAdminSettings() : renderUserSettings()}
+      {role === 'admin' ? renderAdminSettings() : renderUserSettings()}
     </MainLayout>
   );
 };

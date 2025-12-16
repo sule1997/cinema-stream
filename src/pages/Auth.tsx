@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { z } from 'zod';
+
+// Validation schemas
+const phoneSchema = z.string()
+  .length(10, 'Phone number must be 10 digits')
+  .regex(/^0\d{9}$/, 'Phone number must start with 0');
+
+const passwordSchema = z.string()
+  .min(6, 'Password must be at least 6 characters');
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user, signUp, signIn, isLoading: authLoading } = useAuth();
   
   const [isSignUp, setIsSignUp] = useState(searchParams.get('mode') === 'signup');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,27 +28,38 @@ const Auth = () => {
   
   const [formData, setFormData] = useState({
     phone: '',
+    username: '',
     password: '',
     confirmPassword: '',
   });
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone number (10 digits starting with 0)
-    if (!/^0\d{9}$/.test(formData.phone)) {
+    // Validate phone number
+    const phoneResult = phoneSchema.safeParse(formData.phone);
+    if (!phoneResult.success) {
       toast({
         title: "Invalid Phone Number",
-        description: "Phone number must be 10 digits starting with 0",
+        description: phoneResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
 
-    if (formData.password.length < 6) {
+    // Validate password
+    const passwordResult = passwordSchema.safeParse(formData.password);
+    if (!passwordResult.success) {
       toast({
-        title: "Password Too Short",
-        description: "Password must be at least 6 characters",
+        title: "Invalid Password",
+        description: passwordResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -53,19 +75,78 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(formData.phone, formData.password, formData.username || formData.phone);
+        
+        if (error) {
+          // Handle specific error cases
+          if (error.message.includes('already registered')) {
+            toast({
+              title: "Phone Already Registered",
+              description: "This phone number is already registered. Please sign in instead.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Sign Up Failed",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+        
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully.",
+        });
+        navigate('/dashboard');
+      } else {
+        const { error } = await signIn(formData.phone, formData.password);
+        
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            toast({
+              title: "Invalid Credentials",
+              description: "Phone number or password is incorrect.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Sign In Failed",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+        
+        toast({
+          title: "Welcome Back!",
+          description: "You have been signed in successfully.",
+        });
+        navigate('/dashboard');
+      }
+    } catch (err) {
       toast({
-        title: isSignUp ? "Account Created!" : "Welcome Back!",
-        description: isSignUp 
-          ? "Your account has been created successfully." 
-          : "You have been signed in successfully.",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
-      navigate('/dashboard');
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background mobile-container flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background mobile-container">
@@ -101,13 +182,32 @@ const Auth = () => {
                 type="tel"
                 placeholder="0XXXXXXXXX"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
                 className="pl-10"
                 maxLength={10}
               />
             </div>
             <p className="text-xs text-muted-foreground">10 digits starting with 0</p>
           </div>
+
+          {/* Username (Sign Up only) */}
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="username">Username (Optional)</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Enter username"
+                  value={formData.username}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  className="pl-10"
+                  maxLength={50}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Password */}
           <div className="space-y-2">
