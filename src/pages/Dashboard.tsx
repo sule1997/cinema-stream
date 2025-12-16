@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Users, 
   Film, 
@@ -13,13 +14,21 @@ import {
   Eye
 } from 'lucide-react';
 
-// Mock user state - in real app this would come from auth context
-const mockUser = null; // Set to { role: 'admin' | 'dj' | 'subscriber' } when logged in
-
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, profile, role, isLoading } = useAuth();
 
-  if (!mockUser) {
+  if (isLoading) {
+    return (
+      <MainLayout showTopNav={false}>
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!user) {
     return (
       <MainLayout showTopNav={false}>
         <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 animate-fade-in">
@@ -67,7 +76,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Users</p>
-                <p className="text-lg font-bold">1,234</p>
+                <p className="text-lg font-bold">0</p>
               </div>
             </div>
           </CardContent>
@@ -81,7 +90,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Movies</p>
-                <p className="text-lg font-bold">567</p>
+                <p className="text-lg font-bold">0</p>
               </div>
             </div>
           </CardContent>
@@ -95,7 +104,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Earnings</p>
-                <p className="text-xl font-bold text-price">Tsh 2,450,000</p>
+                <p className="text-xl font-bold text-price">Tsh 0</p>
               </div>
             </div>
           </CardContent>
@@ -133,7 +142,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">My Videos</p>
-                <p className="text-lg font-bold">45</p>
+                <p className="text-lg font-bold">0</p>
               </div>
             </div>
           </CardContent>
@@ -147,7 +156,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Earnings</p>
-                <p className="text-lg font-bold text-price">Tsh 125,000</p>
+                <p className="text-lg font-bold text-price">Tsh 0</p>
               </div>
             </div>
           </CardContent>
@@ -165,6 +174,9 @@ const Dashboard = () => {
   const renderSubscriberDashboard = () => (
     <div className="p-4 space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold">My Dashboard</h1>
+      <p className="text-sm text-muted-foreground">
+        Welcome, {profile?.username || profile?.phone || 'User'}!
+      </p>
       
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-card">
@@ -175,7 +187,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-lg font-bold text-primary">Tsh 5,000</p>
+                <p className="text-lg font-bold text-primary">Tsh {profile?.balance?.toLocaleString() || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -189,7 +201,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Watched</p>
-                <p className="text-lg font-bold">23</p>
+                <p className="text-lg font-bold">0</p>
               </div>
             </div>
           </CardContent>
@@ -203,7 +215,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Spent</p>
-                <p className="text-lg font-bold text-price">Tsh 45,000</p>
+                <p className="text-lg font-bold text-price">Tsh 0</p>
               </div>
             </div>
           </CardContent>
@@ -225,9 +237,9 @@ const Dashboard = () => {
 
   return (
     <MainLayout showTopNav={false}>
-      {mockUser?.role === 'admin' && renderAdminDashboard()}
-      {mockUser?.role === 'dj' && renderDJDashboard()}
-      {mockUser?.role === 'subscriber' && renderSubscriberDashboard()}
+      {role === 'admin' && renderAdminDashboard()}
+      {role === 'dj' && renderDJDashboard()}
+      {role === 'subscriber' && renderSubscriberDashboard()}
     </MainLayout>
   );
 };
