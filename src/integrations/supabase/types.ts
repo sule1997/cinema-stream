@@ -14,9 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_settings: {
+        Row: {
+          api_key: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       movies: {
         Row: {
           category: string
+          category_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -33,6 +88,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -49,6 +105,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -63,13 +120,23 @@ export type Database = {
           video_url?: string | null
           views?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "movies_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           balance: number | null
           created_at: string | null
+          earnings: number | null
           id: string
+          is_blocked: boolean | null
           phone: string
           updated_at: string | null
           user_id: string
@@ -78,7 +145,9 @@ export type Database = {
         Insert: {
           balance?: number | null
           created_at?: string | null
+          earnings?: number | null
           id?: string
+          is_blocked?: boolean | null
           phone: string
           updated_at?: string | null
           user_id: string
@@ -87,7 +156,9 @@ export type Database = {
         Update: {
           balance?: number | null
           created_at?: string | null
+          earnings?: number | null
           id?: string
+          is_blocked?: boolean | null
           phone?: string
           updated_at?: string | null
           user_id?: string
@@ -144,6 +215,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdraw_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []

@@ -6,28 +6,13 @@ import { SideMenu } from './SideMenu';
 interface MainLayoutProps {
   children: React.ReactNode;
   showTopNav?: boolean;
-  categories?: string[];
   selectedCategory?: string | null;
   onSelectCategory?: (category: string | null) => void;
 }
 
-const defaultCategories = [
-  'Action',
-  'Comedy',
-  'Drama',
-  'Horror',
-  'Romance',
-  'Sci-Fi',
-  'Thriller',
-  'Documentary',
-  'Animation',
-  'Adventure',
-];
-
 export function MainLayout({ 
   children, 
   showTopNav = true,
-  categories = defaultCategories,
   selectedCategory = null,
   onSelectCategory = () => {}
 }: MainLayoutProps) {
@@ -42,7 +27,6 @@ export function MainLayout({
       <SideMenu
         isOpen={isSideMenuOpen}
         onClose={() => setIsSideMenuOpen(false)}
-        categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={onSelectCategory}
       />
