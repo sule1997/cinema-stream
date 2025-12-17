@@ -1,32 +1,30 @@
 import { useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovieGrid } from '@/components/movies/MovieGrid';
-import { mockMovies } from '@/data/mockMovies';
+import { useMovies, useIncrementViews } from '@/hooks/useMovies';
 
 const MOVIES_PER_PAGE = 20;
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [movies, setMovies] = useState(mockMovies);
+  
+  const { data: movies = [], isLoading } = useMovies(selectedCategory || undefined);
+  const incrementViews = useIncrementViews();
 
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(mockMovies.map(m => m.category))];
+    const uniqueCategories = [...new Set(movies.map(m => m.category))];
     return uniqueCategories.sort();
-  }, []);
+  }, [movies]);
 
-  const filteredMovies = useMemo(() => {
-    if (!selectedCategory) return movies;
-    return movies.filter(m => m.category === selectedCategory);
-  }, [movies, selectedCategory]);
-
-  const totalPages = Math.ceil(filteredMovies.length / MOVIES_PER_PAGE);
+  const totalPages = Math.ceil(movies.length / MOVIES_PER_PAGE);
   
   const paginatedMovies = useMemo(() => {
     const start = (currentPage - 1) * MOVIES_PER_PAGE;
     const end = start + MOVIES_PER_PAGE;
-    return filteredMovies.slice(start, end);
-  }, [filteredMovies, currentPage]);
+    return movies.slice(start, end);
+  }, [movies, currentPage]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -39,14 +37,18 @@ const Index = () => {
   };
 
   const handleViewIncrement = (movieId: string) => {
-    setMovies(prev => 
-      prev.map(m => 
-        m.id === movieId 
-          ? { ...m, views: m.views + 1 } 
-          : m
-      )
-    );
+    incrementViews.mutate(movieId);
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout showTopNav={true}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout 
@@ -63,7 +65,7 @@ const Index = () => {
               {selectedCategory} Movies
             </h2>
             <p className="text-sm text-muted-foreground">
-              {filteredMovies.length} movies found
+              {movies.length} movies found
             </p>
           </div>
         )}

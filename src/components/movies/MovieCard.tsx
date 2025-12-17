@@ -1,17 +1,33 @@
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
-import { Movie, toSentenceCase, formatPrice, formatViews } from '@/types/movie';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Movie, getImageUrl } from '@/hooks/useMovies';
 
 interface MovieCardProps {
   movie: Movie;
   onViewIncrement?: (movieId: string) => void;
 }
 
+const formatPrice = (price: number): string => {
+  if (price === 0) return 'FREE';
+  return `Tsh ${price.toLocaleString()}`;
+};
+
+const formatViews = (views: number): string => {
+  if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+  if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+  return views.toString();
+};
+
+const toSentenceCase = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
 export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
   const navigate = useNavigate();
   const isFree = movie.price === 0;
+  const imageUrl = getImageUrl(movie.image_path);
 
   const handleClick = () => {
     onViewIncrement?.(movie.id);
@@ -36,7 +52,7 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
       {/* Movie Poster */}
       <div className="relative aspect-[2/3] overflow-hidden">
         <img
-          src={movie.imageUrl}
+          src={imageUrl}
           alt={toSentenceCase(movie.title)}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />

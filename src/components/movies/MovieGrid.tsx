@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Movie } from '@/types/movie';
+import { Movie } from '@/hooks/useMovies';
 import { MovieCard } from './MovieCard';
 import { Button } from '@/components/ui/button';
 
@@ -35,6 +35,13 @@ export function MovieGrid({
           </div>
         ))}
       </div>
+
+      {/* Empty State */}
+      {movies.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No movies found</p>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
