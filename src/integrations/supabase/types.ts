@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      movies: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          dj_name: string
+          google_drive_url: string | null
+          id: string
+          image_path: string | null
+          price: number
+          release_year: number
+          title: string
+          updated_at: string
+          video_url: string | null
+          views: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dj_name: string
+          google_drive_url?: string | null
+          id?: string
+          image_path?: string | null
+          price?: number
+          release_year?: number
+          title: string
+          updated_at?: string
+          video_url?: string | null
+          views?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dj_name?: string
+          google_drive_url?: string | null
+          id?: string
+          image_path?: string | null
+          price?: number
+          release_year?: number
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+          views?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           balance: number | null
@@ -43,6 +94,38 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      user_purchases: {
+        Row: {
+          amount: number
+          id: string
+          movie_id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          movie_id: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          movie_id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_purchases_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
