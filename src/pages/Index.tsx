@@ -53,7 +53,6 @@ const Index = () => {
   return (
     <MainLayout 
       showTopNav={true}
-      categories={categories}
       selectedCategory={selectedCategory}
       onSelectCategory={handleCategoryChange}
     >

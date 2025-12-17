@@ -1,11 +1,11 @@
-import { X, Film, Info, FileText, Shield } from 'lucide-react';
+import { X, Film, Info, FileText, Shield, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useCategories } from '@/hooks/useAdmin';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  categories: string[];
   selectedCategory: string | null;
   onSelectCategory: (category: string | null) => void;
 }
@@ -19,10 +19,11 @@ const footerLinks = [
 export function SideMenu({ 
   isOpen, 
   onClose, 
-  categories, 
   selectedCategory, 
   onSelectCategory 
 }: SideMenuProps) {
+  const { data: categories = [], isLoading } = useCategories();
+
   return (
     <>
       {/* Overlay */}
@@ -70,23 +71,29 @@ export function SideMenu({
               All Movies
             </button>
             
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => {
-                  onSelectCategory(category);
-                  onClose();
-                }}
-                className={cn(
-                  "w-full text-left px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium mt-1",
-                  selectedCategory === category
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-secondary text-foreground"
-                )}
-              >
-                {category}
-              </button>
-            ))}
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    onSelectCategory(category.name);
+                    onClose();
+                  }}
+                  className={cn(
+                    "w-full text-left px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium mt-1",
+                    selectedCategory === category.name
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-secondary text-foreground"
+                  )}
+                >
+                  {category.name}
+                </button>
+              ))
+            )}
           </div>
 
           {/* Footer Links */}

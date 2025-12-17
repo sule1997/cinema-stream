@@ -1,22 +1,33 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { AdminStats, UserManagement } from '@/components/admin/AdminStats';
+import { CategoryManagement } from '@/components/admin/CategoryManagement';
+import { ApiSettings } from '@/components/admin/ApiSettings';
+import { WithdrawRequests } from '@/components/admin/WithdrawRequests';
+import { DjStats, DjMoviesList } from '@/components/admin/DjDashboard';
+import { MovieUploadDialog } from '@/components/admin/MovieUploadDialog';
 import { 
   Users, 
-  Film, 
-  DollarSign, 
   TrendingUp, 
   Wallet, 
   History,
   Upload,
-  Eye
+  Eye,
+  Settings,
+  FolderTree,
+  Key,
+  Clock
 } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, role, isLoading } = useAuth();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -63,110 +74,75 @@ const Dashboard = () => {
 
   // Admin Dashboard
   const renderAdminDashboard = () => (
-    <div className="p-4 space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold">Admin Dashboard</h1>
+    <div className="p-4 space-y-4 animate-fade-in pb-20">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
+          <Upload className="h-4 w-4 mr-1" />
+          Upload
+        </Button>
+      </div>
       
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Users</p>
-                <p className="text-lg font-bold">0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <AdminStats />
 
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/10">
-                <Film className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Movies</p>
-                <p className="text-lg font-bold">0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="users" className="text-xs px-1">
+            <Users className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="withdraw" className="text-xs px-1">
+            <Clock className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs px-1">
+            <FolderTree className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="api" className="text-xs px-1">
+            <Key className="h-4 w-4" />
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="mt-4">
+          <UserManagement />
+        </TabsContent>
+        
+        <TabsContent value="withdraw" className="mt-4">
+          <WithdrawRequests />
+        </TabsContent>
+        
+        <TabsContent value="categories" className="mt-4">
+          <CategoryManagement />
+        </TabsContent>
+        
+        <TabsContent value="api" className="mt-4">
+          <ApiSettings />
+        </TabsContent>
+      </Tabs>
 
-        <Card className="bg-card col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-price/10">
-                <DollarSign className="h-5 w-5 text-price" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Earnings</p>
-                <p className="text-xl font-bold text-price">Tsh 0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="space-y-3">
-        <h2 className="font-semibold">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" className="h-auto py-4 flex flex-col gap-2">
-            <Upload className="h-5 w-5" />
-            <span className="text-xs">Upload Movie</span>
-          </Button>
-          <Button variant="outline" className="h-auto py-4 flex flex-col gap-2">
-            <Users className="h-5 w-5" />
-            <span className="text-xs">Manage Users</span>
-          </Button>
-        </div>
-      </div>
+      <MovieUploadDialog 
+        open={uploadDialogOpen} 
+        onOpenChange={setUploadDialogOpen} 
+      />
     </div>
   );
 
   // DJ Dashboard
   const renderDJDashboard = () => (
-    <div className="p-4 space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold">DJ Dashboard</h1>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Film className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">My Videos</p>
-                <p className="text-lg font-bold">0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-price/10">
-                <DollarSign className="h-5 w-5 text-price" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Earnings</p>
-                <p className="text-lg font-bold text-price">Tsh 0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="p-4 space-y-4 animate-fade-in pb-20">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">DJ Dashboard</h1>
+        <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
+          <Upload className="h-4 w-4 mr-1" />
+          Upload
+        </Button>
       </div>
+      
+      <DjStats />
+      <DjMoviesList />
 
-      <Button className="w-full bg-primary hover:bg-primary/90">
-        <Upload className="h-4 w-4 mr-2" />
-        Upload New Video
-      </Button>
+      <MovieUploadDialog 
+        open={uploadDialogOpen} 
+        onOpenChange={setUploadDialogOpen} 
+      />
     </div>
   );
 
