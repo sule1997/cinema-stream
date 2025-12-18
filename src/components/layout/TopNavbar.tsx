@@ -7,7 +7,7 @@ interface TopNavbarProps {
   title?: string;
 }
 
-export function TopNavbar({ onMenuClick, title = "CineVault" }: TopNavbarProps) {
+export function TopNavbar({ onMenuClick, title = "Muvietz" }: TopNavbarProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
