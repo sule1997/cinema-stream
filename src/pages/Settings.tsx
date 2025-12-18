@@ -1,24 +1,41 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Settings as SettingsIcon, 
   User, 
   Lock, 
   LogOut,
-  Search,
-  FileText,
-  Key,
-  Globe
+  Loader2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, role, isLoading, signOut } = useAuth();
   const { toast } = useToast();
+  
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -27,6 +44,52 @@ const Settings = () => {
       description: "You have been signed out successfully.",
     });
     navigate('/');
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'New passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Password updated successfully',
+      });
+      setPasswordDialogOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update password',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   if (isLoading) {
@@ -72,110 +135,110 @@ const Settings = () => {
     );
   }
 
-  const renderAdminSettings = () => (
-    <div className="p-4 space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold">Admin Settings</h1>
-      
-      {/* SEO Control */}
-      <div className="space-y-3">
-        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-          SEO Control
-        </h2>
-        <Card className="bg-card">
-          <CardContent className="p-0">
-            <SettingItem icon={Globe} label="Site Title" description="Configure your site title" />
-            <SettingItem icon={FileText} label="Site Description" description="Edit meta description" />
-            <SettingItem icon={Search} label="Keywords" description="Manage SEO keywords" last />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Access Settings */}
-      <div className="space-y-3">
-        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-          Access Settings
-        </h2>
-        <Card className="bg-card">
-          <CardContent className="p-0">
-            <SettingItem icon={Key} label="API Settings" description="Manage API keys" />
-            <SettingItem icon={Lock} label="Update Password" description="Change your password" last />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Button variant="destructive" className="w-full" onClick={handleLogout}>
-        <LogOut className="h-4 w-4 mr-2" />
-        Logout
-      </Button>
-    </div>
-  );
-
-  const renderUserSettings = () => (
-    <div className="p-4 space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold">Settings</h1>
-      
-      {/* User Info Card */}
-      <Card className="bg-card">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">{profile?.username || 'User'}</p>
-              <p className="text-sm text-muted-foreground">{profile?.phone}</p>
-              <p className="text-xs text-accent capitalize">{role}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Account Settings */}
-      <div className="space-y-3">
-        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-          Account
-        </h2>
-        <Card className="bg-card">
-          <CardContent className="p-0">
-            <SettingItem icon={User} label="Profile" description="View and edit your profile" />
-            <SettingItem icon={Lock} label="Update Password" description="Change your password" last />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Button variant="destructive" className="w-full" onClick={handleLogout}>
-        <LogOut className="h-4 w-4 mr-2" />
-        Logout
-      </Button>
-    </div>
-  );
-
   return (
     <MainLayout showTopNav={false}>
-      {role === 'admin' ? renderAdminSettings() : renderUserSettings()}
+      <div className="p-4 space-y-6 animate-fade-in">
+        <h1 className="text-xl font-bold">
+          {role === 'admin' ? 'Admin Settings' : 'Settings'}
+        </h1>
+        
+        {/* User Info Card */}
+        <Card className="bg-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">{profile?.username || 'User'}</p>
+                <p className="text-sm text-muted-foreground">{profile?.phone}</p>
+                <p className="text-xs text-accent capitalize">{role}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Account Settings */}
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+            Account
+          </h2>
+          <Card className="bg-card">
+            <CardContent className="p-0">
+              <button 
+                onClick={() => setPasswordDialogOpen(true)}
+                className="w-full flex items-center gap-4 p-4 hover:bg-secondary/50 transition-colors"
+              >
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Lock className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-medium text-sm">Update Password</p>
+                  <p className="text-xs text-muted-foreground">Change your password</p>
+                </div>
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Button variant="destructive" className="w-full" onClick={handleLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
+
+      {/* Password Update Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPasswords ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords(!showPasswords)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type={showPasswords ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdatePassword} 
+              disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+            >
+              {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
-
-interface SettingItemProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  description: string;
-  last?: boolean;
-}
-
-function SettingItem({ icon: Icon, label, description, last }: SettingItemProps) {
-  return (
-    <button className={`w-full flex items-center gap-4 p-4 hover:bg-secondary/50 transition-colors ${!last ? 'border-b border-border' : ''}`}>
-      <div className="p-2 rounded-lg bg-primary/10">
-        <Icon className="h-5 w-5 text-primary" />
-      </div>
-      <div className="flex-1 text-left">
-        <p className="font-medium text-sm">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-    </button>
-  );
-}
 
 export default Settings;

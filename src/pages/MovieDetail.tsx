@@ -152,6 +152,7 @@ const MovieDetail = () => {
               src={movie.video_url} 
               poster={imageUrl}
               className="w-full"
+              autoplay={true}
             />
           </div>
         ) : (

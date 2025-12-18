@@ -24,8 +24,8 @@ export function BottomNavbar() {
               className={cn(
                 "flex flex-col items-center gap-1 px-6 py-2 rounded-xl transition-all duration-200",
                 isActive 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <item.icon className={cn(

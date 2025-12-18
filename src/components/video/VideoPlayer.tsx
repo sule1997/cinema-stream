@@ -7,10 +7,11 @@ interface VideoPlayerProps {
   src: string;
   poster?: string;
   className?: string;
+  autoplay?: boolean;
   onReady?: (player: Player) => void;
 }
 
-const VideoPlayer = ({ src, poster, className = '', onReady }: VideoPlayerProps) => {
+const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
 
@@ -24,7 +25,7 @@ const VideoPlayer = ({ src, poster, className = '', onReady }: VideoPlayerProps)
 
     // Initialize player
     const player = videojs(videoElement, {
-      autoplay: false,
+      autoplay: autoplay,
       controls: true,
       responsive: true,
       fluid: true,
@@ -64,7 +65,7 @@ const VideoPlayer = ({ src, poster, className = '', onReady }: VideoPlayerProps)
         playerRef.current = null;
       }
     };
-  }, [src, poster, onReady]);
+  }, [src, poster, autoplay, onReady]);
 
   // Update source when src changes
   useEffect(() => {

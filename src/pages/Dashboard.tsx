@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminStats, UserManagement } from '@/components/admin/AdminStats';
@@ -11,14 +10,10 @@ import { ApiSettings } from '@/components/admin/ApiSettings';
 import { WithdrawRequests } from '@/components/admin/WithdrawRequests';
 import { DjStats, DjMoviesList } from '@/components/admin/DjDashboard';
 import { MovieUploadDialog } from '@/components/admin/MovieUploadDialog';
+import { SubscriberDashboard } from '@/components/subscriber/SubscriberDashboard';
 import { 
   Users, 
-  TrendingUp, 
-  Wallet, 
-  History,
   Upload,
-  Eye,
-  Settings,
   FolderTree,
   Key,
   Clock
@@ -146,76 +141,11 @@ const Dashboard = () => {
     </div>
   );
 
-  // Subscriber Dashboard
-  const renderSubscriberDashboard = () => (
-    <div className="p-4 space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold">My Dashboard</h1>
-      <p className="text-sm text-muted-foreground">
-        Welcome, {profile?.username || profile?.phone || 'User'}!
-      </p>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Wallet className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-lg font-bold text-primary">Tsh {profile?.balance?.toLocaleString() || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-views/10">
-                <Eye className="h-5 w-5 text-views" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Watched</p>
-                <p className="text-lg font-bold">0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-price/10">
-                <TrendingUp className="h-5 w-5 text-price" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Spent</p>
-                <p className="text-lg font-bold text-price">Tsh 0</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-3">
-        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Wallet className="h-4 w-4 mr-2" />
-          Top Up Balance
-        </Button>
-        <Button variant="outline" className="w-full">
-          <History className="h-4 w-4 mr-2" />
-          Purchase History
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
     <MainLayout showTopNav={false}>
       {role === 'admin' && renderAdminDashboard()}
       {role === 'dj' && renderDJDashboard()}
-      {role === 'subscriber' && renderSubscriberDashboard()}
+      {role === 'subscriber' && <SubscriberDashboard />}
     </MainLayout>
   );
 };
