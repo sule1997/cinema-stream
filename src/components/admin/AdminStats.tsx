@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Users, Film, DollarSign, Loader2, Shield, Ban, Trash2, UserCheck } from 'lucide-react';
+import { Users, Film, DollarSign, Loader2, Shield, Ban, Trash2, UserCheck, Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAdminStats, useAllUsers, useUpdateUserRole, useBlockUser, useDeleteUser } from '@/hooks/useAdmin';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export function AdminStats() {
   const { data: stats, isLoading } = useAdminStats();
@@ -66,13 +76,17 @@ export function AdminStats() {
 
 export function UserManagement() {
   const { toast } = useToast();
-  const { data: users = [], isLoading } = useAllUsers();
+  const { data: users = [], isLoading, refetch } = useAllUsers();
   const updateRole = useUpdateUserRole();
   const blockUser = useBlockUser();
   const deleteUser = useDeleteUser();
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [newBalance, setNewBalance] = useState('');
+  const [isUpdatingBalance, setIsUpdatingBalance] = useState(false);
 
   const handleMakeDJ = async (userId: string) => {
     try {
@@ -112,6 +126,28 @@ export function UserManagement() {
     }
   };
 
+  const handleUpdateBalance = async () => {
+    if (!selectedUser || !newBalance) return;
+    setIsUpdatingBalance(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ balance: parseFloat(newBalance) })
+        .eq('user_id', selectedUser.user_id);
+      
+      if (error) throw error;
+      
+      toast({ title: 'Success', description: 'Balance updated successfully' });
+      setBalanceDialogOpen(false);
+      setNewBalance('');
+      refetch();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update balance', variant: 'destructive' });
+    } finally {
+      setIsUpdatingBalance(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -145,15 +181,32 @@ export function UserManagement() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">{user.phone}</p>
+                <p className="text-xs text-primary">Bal: Tsh {(user.balance || 0).toLocaleString()}</p>
               </div>
               
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap justify-end">
+                {user.role === 'subscriber' && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setNewBalance((user.balance || 0).toString());
+                      setBalanceDialogOpen(true);
+                    }}
+                    title="Update Balance"
+                  >
+                    <Wallet className="h-3 w-3" />
+                  </Button>
+                )}
+                
                 {user.role === 'subscriber' ? (
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => handleMakeDJ(user.user_id)}
                     disabled={updateRole.isPending}
+                    title="Make DJ"
                   >
                     <Shield className="h-3 w-3" />
                   </Button>
@@ -163,6 +216,7 @@ export function UserManagement() {
                     variant="outline"
                     onClick={() => handleRevertToSubscriber(user.user_id)}
                     disabled={updateRole.isPending}
+                    title="Revert to Subscriber"
                   >
                     <UserCheck className="h-3 w-3" />
                   </Button>
@@ -173,6 +227,7 @@ export function UserManagement() {
                   variant={user.is_blocked ? 'default' : 'outline'}
                   onClick={() => handleBlock(user.user_id, user.is_blocked)}
                   disabled={blockUser.isPending}
+                  title={user.is_blocked ? 'Unblock' : 'Block'}
                 >
                   <Ban className="h-3 w-3" />
                 </Button>
@@ -184,6 +239,7 @@ export function UserManagement() {
                     setSelectedUserId(user.user_id);
                     setDeleteDialogOpen(true);
                   }}
+                  title="Delete"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -196,6 +252,43 @@ export function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Balance Update Dialog */}
+      <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update User Balance</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                User: {selectedUser?.username || selectedUser?.phone}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Current Balance: Tsh {(selectedUser?.balance || 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newBalance">New Balance (Tsh)</Label>
+              <Input
+                id="newBalance"
+                type="number"
+                value={newBalance}
+                onChange={(e) => setNewBalance(e.target.value)}
+                placeholder="Enter new balance"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBalanceDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateBalance} disabled={isUpdatingBalance}>
+              {isUpdatingBalance ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
