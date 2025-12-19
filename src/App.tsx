@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRedirectDialog } from "@/components/BrowserRedirectDialog";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { URLCleaner } from "@/components/URLCleaner";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
@@ -19,6 +22,9 @@ const App = () => (
     <ThemeProvider>
       <AuthProvider>
         <TooltipProvider>
+          <URLCleaner />
+          <BrowserRedirectDialog />
+          <PWAInstallPrompt />
           <Toaster />
           <Sonner />
           <BrowserRouter>
