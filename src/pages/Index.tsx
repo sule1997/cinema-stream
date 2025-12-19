@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovieGrid } from '@/components/movies/MovieGrid';
+import { MovieSearch, FilterType } from '@/components/movies/MovieSearch';
 import { useMovies, useIncrementViews } from '@/hooks/useMovies';
 
 const MOVIES_PER_PAGE = 20;
@@ -9,6 +10,8 @@ const MOVIES_PER_PAGE = 20;
 const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   
   const { data: movies = [], isLoading } = useMovies(selectedCategory || undefined);
   const incrementViews = useIncrementViews();
@@ -18,13 +21,46 @@ const Index = () => {
     return uniqueCategories.sort();
   }, [movies]);
 
-  const totalPages = Math.ceil(movies.length / MOVIES_PER_PAGE);
+  // Filter and search movies
+  const filteredMovies = useMemo(() => {
+    let result = [...movies];
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.title.toLowerCase().includes(query) ||
+          m.dj_name.toLowerCase().includes(query) ||
+          m.category.toLowerCase().includes(query)
+      );
+    }
+    
+    // Type filter
+    switch (activeFilter) {
+      case 'views':
+        result = result.sort((a, b) => b.views - a.views);
+        break;
+      case 'free':
+        result = result.filter((m) => m.price === 0);
+        break;
+      case 'paid':
+        result = result.filter((m) => m.price > 0);
+        break;
+      default:
+        break;
+    }
+    
+    return result;
+  }, [movies, searchQuery, activeFilter]);
+
+  const totalPages = Math.ceil(filteredMovies.length / MOVIES_PER_PAGE);
   
   const paginatedMovies = useMemo(() => {
     const start = (currentPage - 1) * MOVIES_PER_PAGE;
     const end = start + MOVIES_PER_PAGE;
-    return movies.slice(start, end);
-  }, [movies, currentPage]);
+    return filteredMovies.slice(start, end);
+  }, [filteredMovies, currentPage]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -33,6 +69,16 @@ const Index = () => {
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (filter: FilterType) => {
+    setActiveFilter(filter);
     setCurrentPage(1);
   };
 
@@ -57,6 +103,14 @@ const Index = () => {
       onSelectCategory={handleCategoryChange}
     >
       <div className="pb-4">
+        {/* Search and Filter */}
+        <MovieSearch
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+        />
+
         {/* Category Header */}
         {selectedCategory && (
           <div className="px-4 pt-4 pb-2">
@@ -64,7 +118,7 @@ const Index = () => {
               {selectedCategory} Movies
             </h2>
             <p className="text-sm text-muted-foreground">
-              {movies.length} movies found
+              {filteredMovies.length} movies found
             </p>
           </div>
         )}

@@ -25,6 +25,7 @@ export const useMovies = (category?: string) => {
       let query = supabase
         .from('movies')
         .select('*')
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
       
       if (category && category !== 'All') {
