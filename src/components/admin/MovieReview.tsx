@@ -15,7 +15,11 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Eye, CheckCircle, XCircle, Film, Settings } from 'lucide-react';
-import { getImageUrl, Movie } from '@/hooks/useMovies';
+import { getImageUrl, Movie, VideoLink } from '@/hooks/useMovies';
+
+interface PendingMovie extends Omit<Movie, 'status'> {
+  status: string;
+}
 
 // Hook to fetch pending movies
 export const usePendingMovies = () => {
@@ -29,7 +33,11 @@ export const usePendingMovies = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as (Movie & { status: string })[];
+      return (data || []).map(movie => ({
+        ...movie,
+        movie_type: (movie.movie_type || 'single') as 'single' | 'season',
+        video_links: (Array.isArray(movie.video_links) ? movie.video_links : []) as unknown as VideoLink[],
+      })) as PendingMovie[];
     },
   });
 };
@@ -103,7 +111,7 @@ export function MovieReview() {
   const { data: reviewEnabled, isLoading: settingLoading } = useReviewSetting();
   const toggleSetting = useToggleReviewSetting();
   const updateStatus = useUpdateMovieStatus();
-  const [previewMovie, setPreviewMovie] = useState<(Movie & { status: string }) | null>(null);
+  const [previewMovie, setPreviewMovie] = useState<PendingMovie | null>(null);
 
   const handleApprove = (movieId: string) => {
     updateStatus.mutate({ movieId, status: 'approved' });

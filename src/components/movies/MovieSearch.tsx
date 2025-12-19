@@ -33,7 +33,7 @@ export function MovieSearch({
   const activeLabel = filterOptions.find((f) => f.value === activeFilter)?.label || 'All Movies';
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
+    <div className="flex items-center gap-2 px-4 py-3 bg-card/95 backdrop-blur-sm border-b border-border sticky top-14 z-10">
       {/* Search Input */}
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

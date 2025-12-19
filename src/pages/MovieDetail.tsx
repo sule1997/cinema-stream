@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, Download, Play, ShoppingCart, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, Download, Play, ShoppingCart, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMovie, useHasPurchased, usePurchaseMovie, useIncrementViews, getImageUrl } from '@/hooks/useMovies';
+import { Card, CardContent } from '@/components/ui/card';
+import { useMovie, useHasPurchased, usePurchaseMovie, useIncrementViews, getImageUrl, VideoLink } from '@/hooks/useMovies';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import VideoPlayer from '@/components/video/VideoPlayer';
@@ -28,6 +29,7 @@ const MovieDetail = () => {
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedEpisode, setSelectedEpisode] = useState<VideoLink | null>(null);
   
   const { data: movie, isLoading } = useMovie(id || '');
   const { data: hasPurchased } = useHasPurchased(user?.id, id);
@@ -57,9 +59,11 @@ const MovieDetail = () => {
   const isFree = movie.price === 0;
   const canWatch = isFree || hasPurchased;
   const imageUrl = getImageUrl(movie.image_path);
+  const isSeason = movie.movie_type === 'season';
 
-  const handleWatch = () => {
-    if (!movie.video_url) {
+  const handleWatch = (videoUrl?: string) => {
+    const urlToPlay = videoUrl || movie.video_url;
+    if (!urlToPlay) {
       toast({
         title: "Video Unavailable",
         description: "This movie doesn't have a video available yet.",
@@ -69,6 +73,10 @@ const MovieDetail = () => {
     }
     
     incrementViews.mutate(movie.id);
+    if (videoUrl) {
+      const episode = movie.video_links?.find(ep => ep.url === videoUrl);
+      setSelectedEpisode(episode || null);
+    }
     setIsPlaying(true);
     
     toast({
@@ -117,9 +125,10 @@ const MovieDetail = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (movie.google_drive_url) {
-      window.open(movie.google_drive_url, '_blank');
+  const handleDownload = (url?: string) => {
+    const downloadUrl = url || movie.google_drive_url;
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
     } else {
       toast({
         title: "Download Unavailable",
@@ -128,6 +137,8 @@ const MovieDetail = () => {
       });
     }
   };
+
+  const currentVideoUrl = selectedEpisode?.url || movie.video_url;
 
   return (
     <div className="min-h-screen bg-background mobile-container">
@@ -146,10 +157,10 @@ const MovieDetail = () => {
         </Button>
 
         {/* Video Player or Poster */}
-        {isPlaying && movie.video_url ? (
+        {isPlaying && currentVideoUrl ? (
           <div className="w-full aspect-video">
             <VideoPlayer 
-              src={movie.video_url} 
+              src={currentVideoUrl} 
               poster={imageUrl}
               className="w-full"
               autoplay={true}
@@ -171,11 +182,17 @@ const MovieDetail = () => {
       <div className="p-4 space-y-6 animate-slide-up">
         {/* Title and Meta */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">
-            {toSentenceCase(movie.title)}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {toSentenceCase(movie.title)}
+            </h1>
+            {isSeason && movie.season_number && (
+              <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-bold">
+                S {movie.season_number}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{movie.release_year}</span>
             <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
               {movie.category}
             </span>
@@ -210,17 +227,61 @@ const MovieDetail = () => {
           </div>
         )}
 
+        {/* Episode List for Seasons */}
+        {isSeason && movie.video_links && movie.video_links.length > 0 && canWatch && (
+          <div className="space-y-3">
+            <h2 className="font-semibold">Episodes</h2>
+            <div className="grid gap-2">
+              {movie.video_links.map((episode, index) => (
+                <Card 
+                  key={index} 
+                  className={`cursor-pointer transition-all hover:bg-secondary/50 ${
+                    selectedEpisode?.url === episode.url ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => handleWatch(episode.url)}
+                >
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Play className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{episode.name}</p>
+                        <p className="text-xs text-muted-foreground">Tap to play</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(episode.url);
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="space-y-3 pb-4">
           {canWatch ? (
-            <Button 
-              onClick={handleWatch}
-              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold"
-              disabled={!movie.video_url}
-            >
-              <Play className="h-5 w-5 mr-2" />
-              {isPlaying ? 'Playing...' : 'Watch Now'}
-            </Button>
+            <>
+              {!isSeason && (
+                <Button 
+                  onClick={() => handleWatch()}
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold"
+                  disabled={!movie.video_url}
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  {isPlaying ? 'Playing...' : 'Watch Now'}
+                </Button>
+              )}
+            </>
           ) : (
             <Button 
               onClick={handleBuy}
@@ -236,15 +297,15 @@ const MovieDetail = () => {
             </Button>
           )}
           
-          {canWatch && (
+          {canWatch && !isSeason && (
             <Button 
               variant="outline" 
-              onClick={handleDownload}
+              onClick={() => handleDownload()}
               className="w-full"
               disabled={!movie.google_drive_url}
             >
               <Download className="h-4 w-4 mr-2" />
-              Download via Google Drive
+              Download
             </Button>
           )}
         </div>

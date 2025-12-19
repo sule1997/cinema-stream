@@ -102,7 +102,7 @@ export function SideMenu({
           </div>
 
           {/* Footer Links - Horizontal */}
-          <div className="p-4">
+          <div className="p-4 pb-20">
             <div className="flex items-center justify-center gap-4">
               {footerLinks.map((link) => (
                 <button

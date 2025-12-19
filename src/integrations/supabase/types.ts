@@ -106,11 +106,14 @@ export type Database = {
           google_drive_url: string | null
           id: string
           image_path: string | null
+          movie_type: string | null
           price: number
           release_year: number
+          season_number: number | null
           status: string
           title: string
           updated_at: string
+          video_links: Json | null
           video_url: string | null
           views: number
         }
@@ -124,11 +127,14 @@ export type Database = {
           google_drive_url?: string | null
           id?: string
           image_path?: string | null
+          movie_type?: string | null
           price?: number
           release_year?: number
+          season_number?: number | null
           status?: string
           title: string
           updated_at?: string
+          video_links?: Json | null
           video_url?: string | null
           views?: number
         }
@@ -142,11 +148,14 @@ export type Database = {
           google_drive_url?: string | null
           id?: string
           image_path?: string | null
+          movie_type?: string | null
           price?: number
           release_year?: number
+          season_number?: number | null
           status?: string
           title?: string
           updated_at?: string
+          video_links?: Json | null
           video_url?: string | null
           views?: number
         }

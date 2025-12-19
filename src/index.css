@@ -111,6 +111,14 @@
     color: hsl(var(--views));
   }
 
+  .pt-nav {
+    padding-top: 3.5rem;
+  }
+
+  .pb-bottom-nav {
+    padding-bottom: 5rem;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
