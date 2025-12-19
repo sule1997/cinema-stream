@@ -27,6 +27,7 @@ const toSentenceCase = (str: string): string => {
 export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
   const navigate = useNavigate();
   const isFree = movie.price === 0;
+  const isSeason = movie.movie_type === 'season';
   const imageUrl = getImageUrl(movie.image_path);
 
   const handleClick = () => {
@@ -44,6 +45,19 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
     }
   };
 
+  // Determine badge content
+  const getBadgeContent = () => {
+    if (isSeason && movie.season_number) {
+      return `S ${movie.season_number}`;
+    }
+    if (isFree) {
+      return 'FREE';
+    }
+    return null;
+  };
+
+  const badgeContent = getBadgeContent();
+
   return (
     <div 
       className="group relative bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in cursor-pointer border border-border"
@@ -58,10 +72,15 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent" />
         
-        {/* Free Badge */}
-        {isFree && (
-          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full shadow-md">
-            FREE
+        {/* Badge */}
+        {badgeContent && (
+          <div className={cn(
+            "absolute top-2 right-2 text-xs font-bold px-2 py-1 rounded-full shadow-md",
+            isSeason 
+              ? "bg-accent text-accent-foreground" 
+              : "bg-primary text-primary-foreground"
+          )}>
+            {badgeContent}
           </div>
         )}
       </div>

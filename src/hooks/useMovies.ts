@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface VideoLink {
+  name: string;
+  url: string;
+}
+
 export interface Movie {
   id: string;
   title: string;
@@ -16,6 +21,9 @@ export interface Movie {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  movie_type: 'single' | 'season';
+  season_number: number | null;
+  video_links: VideoLink[];
 }
 
 export const useMovies = (category?: string) => {
@@ -35,7 +43,11 @@ export const useMovies = (category?: string) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Movie[];
+      return (data || []).map(movie => ({
+        ...movie,
+        movie_type: (movie.movie_type || 'single') as 'single' | 'season',
+        video_links: (Array.isArray(movie.video_links) ? movie.video_links : []) as unknown as VideoLink[],
+      })) as Movie[];
     },
   });
 };
@@ -51,7 +63,13 @@ export const useMovie = (id: string) => {
         .maybeSingle();
       
       if (error) throw error;
-      return data as Movie | null;
+      if (!data) return null;
+      
+      return {
+        ...data,
+        movie_type: (data.movie_type || 'single') as 'single' | 'season',
+        video_links: (Array.isArray(data.video_links) ? data.video_links : []) as unknown as VideoLink[],
+      } as Movie;
     },
     enabled: !!id,
   });
