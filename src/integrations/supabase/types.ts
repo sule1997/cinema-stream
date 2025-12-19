@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -81,6 +108,7 @@ export type Database = {
           image_path: string | null
           price: number
           release_year: number
+          status: string
           title: string
           updated_at: string
           video_url: string | null
@@ -98,6 +126,7 @@ export type Database = {
           image_path?: string | null
           price?: number
           release_year?: number
+          status?: string
           title: string
           updated_at?: string
           video_url?: string | null
@@ -115,6 +144,7 @@ export type Database = {
           image_path?: string | null
           price?: number
           release_year?: number
+          status?: string
           title?: string
           updated_at?: string
           video_url?: string | null

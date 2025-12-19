@@ -11,9 +11,9 @@ interface SideMenuProps {
 }
 
 const footerLinks = [
-  { icon: Info, label: 'About Us', path: '/about' },
-  { icon: FileText, label: 'Terms of Service', path: '/terms' },
-  { icon: Shield, label: 'Privacy Policy', path: '/privacy' },
+  { icon: Info, label: 'About', path: '/about' },
+  { icon: FileText, label: 'Terms', path: '/terms' },
+  { icon: Shield, label: 'Privacy', path: '/privacy' },
 ];
 
 export function SideMenu({ 
@@ -47,7 +47,7 @@ export function SideMenu({
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center gap-2">
               <Film className="h-5 w-5 text-primary" />
-              <span className="font-semibold">Categories</span>
+              <span className="font-semibold text-foreground">Categories</span>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -96,17 +96,24 @@ export function SideMenu({
             )}
           </div>
 
-          {/* Footer Links */}
-          <div className="border-t border-border p-2">
-            {footerLinks.map((link) => (
-              <button
-                key={link.path}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </button>
-            ))}
+          {/* Separator */}
+          <div className="px-4">
+            <hr className="border-border" />
+          </div>
+
+          {/* Footer Links - Horizontal */}
+          <div className="p-4">
+            <div className="flex items-center justify-center gap-4">
+              {footerLinks.map((link) => (
+                <button
+                  key={link.path}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <link.icon className="h-3 w-3" />
+                  {link.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </aside>

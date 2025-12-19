@@ -7,42 +7,39 @@
 @layer base {
   :root {
     --background: 0 0% 98%;
-    --foreground: 220 20% 10%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 174 72% 46%;
-    --primary-foreground: 220 20% 5%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 90%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 43 96% 56%;
-    --accent-foreground: 220 20% 5%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 88%;
-    --input: 220 14% 88%;
-    --ring: 174 72% 46%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 83% 58%;
 
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --price: 43 96% 56%;
-    --views: 174 72% 46%;
-    --surface: 220 14% 96%;
+    --price: 142 71% 35%;
+    --views: 220 9% 46%;
     --surface-elevated: 0 0% 100%;
-    --nav-height: 56px;
-    --bottom-nav-height: 64px;
   }
 
   .dark {

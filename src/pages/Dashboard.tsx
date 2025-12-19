@@ -8,6 +8,7 @@ import { AdminStats, UserManagement } from '@/components/admin/AdminStats';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { ApiSettings } from '@/components/admin/ApiSettings';
 import { WithdrawRequests } from '@/components/admin/WithdrawRequests';
+import { MovieReview } from '@/components/admin/MovieReview';
 import { DjStats, DjMoviesList } from '@/components/admin/DjDashboard';
 import { MovieUploadDialog } from '@/components/admin/MovieUploadDialog';
 import { SubscriberDashboard } from '@/components/subscriber/SubscriberDashboard';
@@ -16,7 +17,8 @@ import {
   Upload,
   FolderTree,
   Key,
-  Clock
+  Clock,
+  Film
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -71,7 +73,7 @@ const Dashboard = () => {
   const renderAdminDashboard = () => (
     <div className="p-4 space-y-4 animate-fade-in pb-20">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
         <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
           <Upload className="h-4 w-4 mr-1" />
           Upload
@@ -81,9 +83,12 @@ const Dashboard = () => {
       <AdminStats />
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users" className="text-xs px-1">
             <Users className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="review" className="text-xs px-1">
+            <Film className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="withdraw" className="text-xs px-1">
             <Clock className="h-4 w-4" />
@@ -98,6 +103,10 @@ const Dashboard = () => {
         
         <TabsContent value="users" className="mt-4">
           <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="review" className="mt-4">
+          <MovieReview />
         </TabsContent>
         
         <TabsContent value="withdraw" className="mt-4">
@@ -124,7 +133,7 @@ const Dashboard = () => {
   const renderDJDashboard = () => (
     <div className="p-4 space-y-4 animate-fade-in pb-20">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">DJ Dashboard</h1>
+        <h1 className="text-xl font-bold text-foreground">DJ Dashboard</h1>
         <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
           <Upload className="h-4 w-4 mr-1" />
           Upload

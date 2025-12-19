@@ -46,7 +46,7 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
 
   return (
     <div 
-      className="group relative bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in cursor-pointer"
+      className="group relative bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in cursor-pointer border border-border"
       onClick={handleClick}
     >
       {/* Movie Poster */}
@@ -56,19 +56,19 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
           alt={toSentenceCase(movie.title)}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent" />
         
         {/* Free Badge */}
         {isFree && (
-          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full">
+          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full shadow-md">
             FREE
           </div>
         )}
       </div>
 
       {/* Movie Info */}
-      <div className="p-3 space-y-2">
-        <h3 className="font-semibold text-sm line-clamp-1 text-card-foreground">
+      <div className="p-3 space-y-2 bg-card">
+        <h3 className="font-semibold text-sm line-clamp-1 text-foreground">
           {toSentenceCase(movie.title)}
         </h3>
 
@@ -80,7 +80,7 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
             {formatPrice(movie.price)}
           </span>
           
-          <div className="flex items-center gap-1 text-views">
+          <div className="flex items-center gap-1 text-muted-foreground">
             <Eye className="h-3 w-3" />
             <span>{formatViews(movie.views)}</span>
           </div>
@@ -94,7 +94,7 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
             "w-full text-xs font-semibold transition-all duration-200",
             isFree 
               ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-              : "bg-accent hover:bg-accent/90 text-accent-foreground"
+              : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
           )}
         >
           {isFree ? 'Watch Now' : 'Buy Now'}

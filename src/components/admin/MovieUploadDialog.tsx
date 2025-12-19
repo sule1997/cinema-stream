@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useAdmin';
+import { useReviewSetting } from '@/components/admin/MovieReview';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,8 +36,9 @@ interface MovieUploadDialogProps {
 
 export function MovieUploadDialog({ open, onOpenChange }: MovieUploadDialogProps) {
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, role } = useAuth();
   const { data: categories = [] } = useCategories();
+  const { data: reviewRequired } = useReviewSetting();
   const queryClient = useQueryClient();
   
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -102,6 +104,10 @@ export function MovieUploadDialog({ open, onOpenChange }: MovieUploadDialogProps
       // Get category name
       const category = categories.find(c => c.id === data.category_id);
       
+      // Determine status based on review setting and user role
+      // Admin uploads are always approved, DJ uploads depend on review setting
+      const movieStatus = (role === 'admin' || !reviewRequired) ? 'approved' : 'pending';
+      
       // Insert movie
       const { error } = await supabase
         .from('movies')
@@ -117,17 +123,23 @@ export function MovieUploadDialog({ open, onOpenChange }: MovieUploadDialogProps
           google_drive_url: data.google_drive_url || null,
           image_path: imagePath,
           created_by: user.id,
+          status: movieStatus,
         });
       
       if (error) throw error;
       
+      const successMessage = movieStatus === 'pending' 
+        ? 'Your movie has been submitted for review.' 
+        : 'Your movie has been published successfully.';
+      
       toast({
-        title: 'Movie Published!',
-        description: 'Your movie has been published successfully.',
+        title: movieStatus === 'pending' ? 'Movie Submitted!' : 'Movie Published!',
+        description: successMessage,
       });
       
       queryClient.invalidateQueries({ queryKey: ['movies'] });
       queryClient.invalidateQueries({ queryKey: ['djMovies'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingMovies'] });
       
       // Reset form
       form.reset();
