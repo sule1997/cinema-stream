@@ -42,7 +42,7 @@ export function MovieSearch({
           placeholder="Search movies..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 pr-4 h-10 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-full text-sm focus-visible:ring-primary"
+          className="pl-9 pr-4 h-10 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-full text-sm"
         />
       </div>
 

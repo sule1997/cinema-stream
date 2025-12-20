@@ -137,7 +137,7 @@ export function MovieUploadDialog({ open, onOpenChange }: MovieUploadDialogProps
           release_year: new Date().getFullYear(),
           category: primaryCategory?.name || 'Uncategorized',
           category_id: data.category_ids[0],
-          video_url: data.movie_type === 'single' ? (data.video_url || null) : null,
+          video_url: data.video_url || null,
           google_drive_url: data.movie_type === 'single' ? (data.google_drive_url || null) : null,
           image_path: imagePath,
           created_by: user.id,
@@ -370,7 +370,21 @@ export function MovieUploadDialog({ open, onOpenChange }: MovieUploadDialogProps
             {/* Season episode links */}
             {movieType === 'season' && (
               <div className="space-y-3">
-                <FormLabel>Episode Links</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="video_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Video Link</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormLabel>Episode Links (Download)</FormLabel>
                 <div className="space-y-2 max-h-48 overflow-y-auto p-2 border border-border rounded-md">
                   {fields.map((field, index) => (
                     <div key={field.id} className="flex gap-2 items-start">
