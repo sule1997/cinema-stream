@@ -162,7 +162,7 @@ const Auth = () => {
       <div className="p-6 space-y-8 animate-fade-in">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            CineVault
+            Movietz
           </h2>
           <p className="text-muted-foreground">
             {isSignUp 

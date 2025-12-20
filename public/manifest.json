@@ -1,6 +1,6 @@
 {
-  "name": "Muvietz - Premium Movie Platform",
-  "short_name": "Muvietz",
+  "name": "Movietz - Premium Movie Platform",
+  "short_name": "Movietz",
   "description": "Stream, buy, and download the latest movies at the best prices",
   "start_url": "/",
   "display": "standalone",

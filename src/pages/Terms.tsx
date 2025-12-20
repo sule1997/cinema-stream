@@ -27,7 +27,7 @@ const Terms = () => {
           <CardContent className="p-4 space-y-3">
             <h3 className="font-semibold">1. Acceptance of Terms</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              By accessing and using CineVault, you accept and agree to be bound by these 
+              By accessing and using Movietz, you accept and agree to be bound by these 
               Terms of Service. If you do not agree to these terms, please do not use our services.
             </p>
           </CardContent>
@@ -94,7 +94,7 @@ const Terms = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground pt-4">
-          For questions about these terms, contact support@cinevault.app
+          For questions about these terms, contact support@movietz.app
         </p>
       </div>
     </div>

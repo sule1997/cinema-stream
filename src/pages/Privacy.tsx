@@ -94,7 +94,7 @@ const Privacy = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground pt-4">
-          For privacy inquiries, contact privacy@cinevault.app
+          For privacy inquiries, contact privacy@movietz.app
         </p>
       </div>
     </div>
