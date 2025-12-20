@@ -24,7 +24,7 @@ const About = () => {
           <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
             <Film className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold">CineVault</h2>
+          <h2 className="text-2xl font-bold">Movietz</h2>
           <p className="text-muted-foreground">
             Your ultimate destination for premium entertainment content.
           </p>
@@ -35,7 +35,7 @@ const About = () => {
           <CardContent className="p-4 space-y-3">
             <h3 className="font-semibold text-lg">Our Mission</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              CineVault is dedicated to bringing you the best entertainment experience. 
+              Movietz is dedicated to bringing you the best entertainment experience. 
               We connect talented DJs and content creators with audiences who appreciate 
               quality content. Our platform makes it easy to discover, purchase, and enjoy 
               movies and series from your favorite creators.
@@ -45,7 +45,7 @@ const About = () => {
 
         {/* Features */}
         <div className="space-y-3">
-          <h3 className="font-semibold text-lg">Why Choose CineVault?</h3>
+          <h3 className="font-semibold text-lg">Why Choose Movietz?</h3>
           <div className="grid gap-3">
             <Card className="bg-card">
               <CardContent className="p-4 flex items-start gap-3">
@@ -98,12 +98,12 @@ const About = () => {
             <p className="text-sm text-muted-foreground">
               Have questions or need support? Reach out to us anytime.
             </p>
-            <p className="text-sm text-primary">support@cinevault.app</p>
+            <p className="text-sm text-primary">support@movietz.app</p>
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} CineVault. All rights reserved.
+          © {new Date().getFullYear()} Movietz. All rights reserved.
         </p>
       </div>
     </div>
