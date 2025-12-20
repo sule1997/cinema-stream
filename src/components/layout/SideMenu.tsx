@@ -1,4 +1,5 @@
 import { X, Film, Info, FileText, Shield, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/useAdmin';
@@ -22,6 +23,7 @@ export function SideMenu({
   selectedCategory, 
   onSelectCategory 
 }: SideMenuProps) {
+  const navigate = useNavigate();
   const { data: categories = [], isLoading } = useCategories();
 
   return (
@@ -107,6 +109,10 @@ export function SideMenu({
               {footerLinks.map((link) => (
                 <button
                   key={link.path}
+                  onClick={() => {
+                    navigate(link.path);
+                    onClose();
+                  }}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <link.icon className="h-3 w-3" />

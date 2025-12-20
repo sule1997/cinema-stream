@@ -18,6 +18,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   isLoading: boolean;
+  refetchProfile: () => Promise<void>;
   signUp: (phone: string, password: string, username?: string) => Promise<{ error: Error | null }>;
   signIn: (phone: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -53,6 +54,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (roleData) {
       setRole(roleData.role as AppRole);
+    }
+  };
+
+  const refetchProfile = async () => {
+    if (user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profileData) {
+        setProfile(profileData as Profile);
+      }
     }
   };
 
@@ -135,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       role,
       isLoading,
+      refetchProfile,
       signUp,
       signIn,
       signOut,

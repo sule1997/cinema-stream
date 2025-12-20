@@ -16,7 +16,7 @@ interface TopupDialogProps {
 
 export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, refetchProfile } = useAuth();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,10 +54,8 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
   const checkTransactionStatus = async (tranId: string) => {
     console.log('Checking transaction status for:', tranId);
     try {
-      const { data, error } = await supabase.functions.invoke('fastlipa-topup', {
+      const { data, error } = await supabase.functions.invoke('fastlipa-topup?action=check-status', {
         body: { transaction_id: tranId },
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
       });
 
       // Parse response if needed
@@ -83,18 +81,16 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         }
 
         // Update balance
-        await supabase.functions.invoke('fastlipa-topup', {
+        await supabase.functions.invoke('fastlipa-topup?action=update-balance', {
           body: { 
             transaction_id: tranId, 
             user_id: user?.id, 
             amount: parseInt(amount) 
           },
-          headers: { 'Content-Type': 'application/json' },
-          method: 'POST',
         });
 
         // Refresh profile data
-        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        await refetchProfile();
         
         toast({
           title: 'Topup Successful!',
@@ -111,10 +107,8 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         }
 
         // Mark as failed in database
-        await supabase.functions.invoke('fastlipa-topup', {
+        await supabase.functions.invoke('fastlipa-topup?action=mark-failed', {
           body: { transaction_id: tranId },
-          headers: { 'Content-Type': 'application/json' },
-          method: 'POST',
         });
       } else {
         // Still pending
@@ -159,15 +153,13 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
     setStatusMessage('Initiating payment...');
 
     try {
-      const { data, error } = await supabase.functions.invoke('fastlipa-topup', {
+      const { data, error } = await supabase.functions.invoke('fastlipa-topup?action=create', {
         body: {
           amount: amountNum,
           phone_number: profile.phone,
           user_id: user.id,
           name: profile.username || 'User',
         },
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
       });
 
       console.log('Topup response:', data);
