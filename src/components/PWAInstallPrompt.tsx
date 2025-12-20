@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Zap, Share } from 'lucide-react';
+import { Download, X, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -28,7 +27,6 @@ export function PWAInstallPrompt() {
     setIsIOS(isIOSDevice);
     setIsStandalone(isInStandaloneMode);
 
-    const hasSeenPrompt = localStorage.getItem('pwa-prompt-seen');
     const hasInstalled = localStorage.getItem('pwa-installed');
 
     if (hasInstalled || isInStandaloneMode) {
@@ -43,10 +41,10 @@ export function PWAInstallPrompt() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     const timer = setTimeout(() => {
-      if (!hasSeenPrompt && !isInStandaloneMode) {
+      if (!isInStandaloneMode) {
         setIsOpen(true);
       }
-    }, 15000);
+    }, 100);
 
     const handleAppInstalled = () => {
       localStorage.setItem('pwa-installed', 'true');
@@ -88,7 +86,6 @@ export function PWAInstallPrompt() {
   };
 
   const handleClose = () => {
-    localStorage.setItem('pwa-prompt-seen', 'true');
     setIsOpen(false);
   };
 
@@ -98,71 +95,44 @@ export function PWAInstallPrompt() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-sm bg-gradient-to-br from-accent/10 via-background to-primary/10 border-2 border-accent/30 shadow-2xl">
+      <DialogContent className="max-w-sm bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 border-2 border-blue-500/30 shadow-2xl">
         <DialogHeader>
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-accent via-primary to-accent flex items-center justify-center mb-4 shadow-lg animate-pulse-glow">
-            <Download className="h-10 w-10 text-white" />
+          <div className="mx-auto w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-xl animate-pulse-glow">
+            <Download className="h-12 w-12 text-white" />
           </div>
-          <DialogTitle className="text-center text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <DialogTitle className="text-center text-3xl font-bold text-white mb-2">
             Install Muvietz
           </DialogTitle>
-          <DialogDescription className="text-center pt-2 text-base">
-            Get instant access to your favorite movies with our app!
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Zap className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm">Lightning Fast</h4>
-                <p className="text-xs text-muted-foreground">Instant loading with offline support</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
-              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <Smartphone className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm">Home Screen Access</h4>
-                <p className="text-xs text-muted-foreground">One tap to open, just like a native app</p>
-              </div>
-            </div>
-          </div>
-
           {isIOS ? (
-            <div className="space-y-3">
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <p className="text-sm text-center mb-3 font-medium">To install on iOS:</p>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-blue-900/40 border border-blue-500/20">
+                <div className="space-y-3 text-sm text-blue-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
                       1
                     </div>
-                    <p>Tap the <Share className="h-3 w-3 inline mx-1" /> share button</p>
+                    <p>Tap <Share className="h-4 w-4 inline mx-1" /> Share</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
                       2
                     </div>
-                    <p>Scroll and tap "Add to Home Screen"</p>
+                    <p>Add to Home Screen</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
                       3
                     </div>
-                    <p>Tap "Add" in the top right</p>
+                    <p>Tap Add</p>
                   </div>
                 </div>
               </div>
               <Button
-                variant="outline"
                 onClick={handleClose}
-                className="w-full"
+                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
               >
                 Got it!
               </Button>
@@ -172,15 +142,15 @@ export function PWAInstallPrompt() {
               <Button
                 onClick={handleInstallClick}
                 disabled={!deferredPrompt}
-                className="w-full h-12 bg-gradient-to-r from-accent via-primary to-accent hover:from-accent/90 hover:via-primary/90 hover:to-accent/90 text-white text-base font-bold shadow-lg"
+                className="w-full h-14 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-700 hover:via-blue-600 hover:to-blue-700 text-white text-lg font-bold shadow-xl"
               >
-                <Download className="h-5 w-5 mr-2" />
+                <Download className="h-6 w-6 mr-2" />
                 Install Now
               </Button>
               <Button
                 variant="ghost"
                 onClick={handleClose}
-                className="w-full text-sm"
+                className="w-full text-sm text-blue-200 hover:text-white hover:bg-blue-900/40"
               >
                 Maybe Later
               </Button>
@@ -190,9 +160,9 @@ export function PWAInstallPrompt() {
 
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="absolute right-4 top-4 rounded-sm opacity-70 text-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
           <span className="sr-only">Close</span>
         </button>
       </DialogContent>
