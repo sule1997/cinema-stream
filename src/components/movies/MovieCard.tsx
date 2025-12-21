@@ -111,9 +111,9 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
           variant={isFree ? "default" : "secondary"}
           className={cn(
             "w-full text-xs font-semibold transition-all duration-200",
-            isFree 
-              ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-              : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+            isFree
+              ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+              : "bg-price hover:bg-price/90 text-background border-0"
           )}
         >
           {isFree ? 'Watch Now' : 'Buy Now'}
