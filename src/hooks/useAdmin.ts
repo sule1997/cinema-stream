@@ -391,3 +391,25 @@ export const useDjMovies = (userId?: string) => {
     enabled: !!userId,
   });
 };
+
+// Delete movie hook
+export const useDeleteMovie = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (movieId: string) => {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', movieId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movies'] });
+      queryClient.invalidateQueries({ queryKey: ['djMovies'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingMovies'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    },
+  });
+};

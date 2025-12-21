@@ -16,6 +16,132 @@ interface CheckStatusRequest {
   transaction_id: string;
 }
 
+// Normalize Fastlipa status to standard values
+function normalizeFastlipaStatus(rawStatus: string | undefined): 'SUCCESS' | 'PENDING' | 'FAILED' | 'UNKNOWN' {
+  if (!rawStatus) return 'UNKNOWN';
+  
+  const status = rawStatus.toLowerCase();
+  const successStatuses = ['success', 'completed', 'paid', 'successful'];
+  const pendingStatuses = ['pending', 'processing', 'initiated'];
+  const failedStatuses = ['failed', 'cancelled', 'reversed', 'canceled', 'rejected'];
+
+  if (successStatuses.includes(status)) {
+    return 'SUCCESS';
+  }
+
+  if (pendingStatuses.includes(status)) {
+    return 'PENDING';
+  }
+
+  if (failedStatuses.includes(status)) {
+    return 'FAILED';
+  }
+
+  return 'UNKNOWN';
+}
+
+// Background polling function
+async function pollTransactionStatus(
+  supabase: any,
+  apiKey: string,
+  transactionId: string,
+  userId: string,
+  amount: number,
+  dbId: string
+) {
+  const maxAttempts = 24; // 2 minutes with 5 second intervals
+  let attempts = 0;
+
+  console.log(`Starting background poll for transaction ${transactionId}, user ${userId}, amount ${amount}`);
+
+  while (attempts < maxAttempts) {
+    attempts++;
+    console.log(`Poll attempt ${attempts}/${maxAttempts} for transaction ${transactionId}`);
+
+    try {
+      // Check transaction status from Fastlipa
+      const statusResponse = await fetch(
+        `https://api.fastlipa.com/api/status-transaction?tranid=${transactionId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+        }
+      );
+
+      const statusData = await statusResponse.json();
+      console.log(`Poll ${attempts} - Fastlipa response:`, statusData);
+
+      const rawStatus = statusData?.status || statusData?.transaction_status;
+      const normalizedStatus = normalizeFastlipaStatus(rawStatus);
+      console.log(`Poll ${attempts} - Normalized status: ${normalizedStatus}`);
+
+      if (normalizedStatus === 'SUCCESS') {
+        console.log(`Transaction ${transactionId} completed successfully, updating balance...`);
+        
+        // Get current balance
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('user_id', userId)
+          .single();
+
+        const currentBalance = profile?.balance || 0;
+        const newBalance = currentBalance + amount;
+
+        // Update user balance
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ balance: newBalance, updated_at: new Date().toISOString() })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error('Failed to update balance:', updateError);
+        } else {
+          console.log(`Balance updated from ${currentBalance} to ${newBalance}`);
+        }
+
+        // Update transaction status
+        await supabase
+          .from('topup_transactions')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', dbId);
+
+        console.log(`Transaction ${transactionId} marked as completed`);
+        return; // Exit polling
+      }
+
+      if (normalizedStatus === 'FAILED') {
+        console.log(`Transaction ${transactionId} failed`);
+        
+        // Mark as failed in database
+        await supabase
+          .from('topup_transactions')
+          .update({ status: 'failed', updated_at: new Date().toISOString() })
+          .eq('id', dbId);
+
+        return; // Exit polling
+      }
+
+      // Still pending, wait 5 seconds before next check
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+    } catch (err) {
+      console.error(`Poll ${attempts} error:`, err);
+      // Continue polling on error
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+
+  // Timeout - mark as failed after 2 minutes
+  console.log(`Transaction ${transactionId} timed out after ${maxAttempts} attempts`);
+  await supabase
+    .from('topup_transactions')
+    .update({ status: 'failed', updated_at: new Date().toISOString() })
+    .eq('id', dbId);
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -83,14 +209,16 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Store transaction in database
+      const transactionId = fastlipaData.tranid || fastlipaData.transaction_id;
+
+      // Store transaction in database with pending status
       const { data: transaction, error: transactionError } = await supabase
         .from('topup_transactions')
         .insert({
           user_id: body.user_id,
           amount: body.amount,
           phone_number: body.phone_number,
-          transaction_id: fastlipaData.tranid || fastlipaData.transaction_id,
+          transaction_id: transactionId,
           status: 'pending',
         })
         .select()
@@ -104,10 +232,35 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Start background polling - use globalThis.EdgeRuntime if available
+      const runtime = (globalThis as any).EdgeRuntime;
+      if (runtime && typeof runtime.waitUntil === 'function') {
+        runtime.waitUntil(
+          pollTransactionStatus(
+            supabase,
+            apiKey,
+            transactionId,
+            body.user_id,
+            body.amount,
+            transaction.id
+          )
+        );
+      } else {
+        // Fallback: run polling without waitUntil (may timeout)
+        pollTransactionStatus(
+          supabase,
+          apiKey,
+          transactionId,
+          body.user_id,
+          body.amount,
+          transaction.id
+        ).catch(console.error);
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
-          transaction_id: fastlipaData.tranid || fastlipaData.transaction_id,
+          transaction_id: transactionId,
           message: 'Topup initiated. Please complete the payment on your phone.',
           db_id: transaction.id
         }),
@@ -127,6 +280,20 @@ Deno.serve(async (req) => {
         );
       }
 
+      // First check local DB status
+      const { data: localTx } = await supabase
+        .from('topup_transactions')
+        .select('status')
+        .eq('transaction_id', body.transaction_id)
+        .single();
+
+      if (localTx && (localTx.status === 'completed' || localTx.status === 'failed')) {
+        return new Response(
+          JSON.stringify({ status: localTx.status, normalized_status: localTx.status === 'completed' ? 'SUCCESS' : 'FAILED' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       // Call Fastlipa API to check status
       const statusResponse = await fetch(
         `https://api.fastlipa.com/api/status-transaction?tranid=${body.transaction_id}`,
@@ -141,8 +308,11 @@ Deno.serve(async (req) => {
       const statusData = await statusResponse.json();
       console.log('Status response:', statusData);
 
+      const rawStatus = statusData?.status || statusData?.transaction_status;
+      const normalizedStatus = normalizeFastlipaStatus(rawStatus);
+
       return new Response(
-        JSON.stringify(statusData),
+        JSON.stringify({ ...statusData, normalized_status: normalizedStatus }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -172,7 +342,7 @@ Deno.serve(async (req) => {
       // Update user balance
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ balance: currentBalance + amount })
+        .update({ balance: currentBalance + amount, updated_at: new Date().toISOString() })
         .eq('user_id', user_id);
 
       if (updateError) {
