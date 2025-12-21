@@ -1,8 +1,21 @@
-import { Film, DollarSign, Eye, Loader2 } from 'lucide-react';
+import { Film, DollarSign, Eye, Loader2, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDjStats, useDjMovies } from '@/hooks/useAdmin';
+import { Button } from '@/components/ui/button';
+import { useDjStats, useDjMovies, useDeleteMovie } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { getImageUrl } from '@/hooks/useMovies';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function DjStats() {
   const { user } = useAuth();
@@ -55,7 +68,25 @@ export function DjStats() {
 
 export function DjMoviesList() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: movies = [], isLoading } = useDjMovies(user?.id);
+  const deleteMovie = useDeleteMovie();
+
+  const handleDelete = async (movieId: string, movieTitle: string) => {
+    try {
+      await deleteMovie.mutateAsync(movieId);
+      toast({
+        title: 'Movie Deleted',
+        description: `"${movieTitle}" has been deleted successfully.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete movie. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -95,6 +126,30 @@ export function DjMoviesList() {
                 </span>
               </div>
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0 text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Movie</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{movie.title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => handleDelete(movie.id, movie.title)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
         

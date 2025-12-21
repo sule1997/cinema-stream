@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, Download, Play, ShoppingCart, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useMovie, useHasPurchased, usePurchaseMovie, useIncrementViews, getImageUrl, VideoLink } from '@/hooks/useMovies';
+import { useMovie, useHasPurchased, usePurchaseMovie, useIncrementViews, getImageUrl } from '@/hooks/useMovies';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import VideoPlayer from '@/components/video/VideoPlayer';
@@ -29,7 +29,6 @@ const MovieDetail = () => {
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedEpisode, setSelectedEpisode] = useState<VideoLink | null>(null);
   
   const { data: movie, isLoading } = useMovie(id || '');
   const { data: hasPurchased } = useHasPurchased(user?.id, id);
@@ -61,9 +60,8 @@ const MovieDetail = () => {
   const imageUrl = getImageUrl(movie.image_path);
   const isSeason = movie.movie_type === 'season';
 
-  const handleWatch = (videoUrl?: string) => {
-    const urlToPlay = videoUrl || movie.video_url;
-    if (!urlToPlay) {
+  const handleWatch = () => {
+    if (!movie.video_url) {
       toast({
         title: "Video Unavailable",
         description: "This movie doesn't have a video available yet.",
@@ -73,10 +71,6 @@ const MovieDetail = () => {
     }
     
     incrementViews.mutate(movie.id);
-    if (videoUrl) {
-      const episode = movie.video_links?.find(ep => ep.url === videoUrl);
-      setSelectedEpisode(episode || null);
-    }
     setIsPlaying(true);
     
     toast({
@@ -138,7 +132,8 @@ const MovieDetail = () => {
     }
   };
 
-  const currentVideoUrl = selectedEpisode?.url || movie.video_url;
+  // Always use video_url for playback, not episode links
+  const currentVideoUrl = movie.video_url;
 
   return (
     <div className="min-h-screen bg-background mobile-container">
@@ -227,36 +222,30 @@ const MovieDetail = () => {
           </div>
         )}
 
-        {/* Episode List for Seasons */}
+        {/* Episode Download Links for Seasons */}
         {isSeason && movie.video_links && movie.video_links.length > 0 && canWatch && (
           <div className="space-y-3">
-            <h2 className="font-semibold">Episodes</h2>
+            <h2 className="font-semibold">Episode Downloads</h2>
             <div className="grid gap-2">
               {movie.video_links.map((episode, index) => (
                 <Card 
                   key={index} 
-                  className={`cursor-pointer transition-all hover:bg-secondary/50 ${
-                    selectedEpisode?.url === episode.url ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => handleWatch(episode.url)}
+                  className="transition-all hover:bg-secondary/50"
                 >
                   <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Play className="h-4 w-4 text-primary" />
+                        <Download className="h-4 w-4 text-primary" />
                       </div>
                       <div>
                         <p className="font-medium text-sm">{episode.name}</p>
-                        <p className="text-xs text-muted-foreground">Tap to play</p>
+                        <p className="text-xs text-muted-foreground">Tap to download</p>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(episode.url);
-                      }}
+                      onClick={() => handleDownload(episode.url)}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -271,16 +260,14 @@ const MovieDetail = () => {
         <div className="space-y-3 pb-4">
           {canWatch ? (
             <>
-              {!isSeason && (
-                <Button 
-                  onClick={() => handleWatch()}
-                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold"
-                  disabled={!movie.video_url}
-                >
-                  <Play className="h-5 w-5 mr-2" />
-                  {isPlaying ? 'Playing...' : 'Watch Now'}
-                </Button>
-              )}
+              <Button 
+                onClick={() => handleWatch()}
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold"
+                disabled={!movie.video_url}
+              >
+                <Play className="h-5 w-5 mr-2" />
+                {isPlaying ? 'Playing...' : 'Watch Now'}
+              </Button>
             </>
           ) : (
             <Button 

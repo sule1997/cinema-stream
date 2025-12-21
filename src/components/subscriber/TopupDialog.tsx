@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface TopupDialogProps {
   open: boolean;
@@ -17,7 +16,6 @@ interface TopupDialogProps {
 export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
   const { toast } = useToast();
   const { user, profile, refetchProfile } = useAuth();
-  const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -67,29 +65,20 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         return;
       }
 
-      // Check if payment is successful (adjust based on actual Fastlipa response)
-      const status = response?.status?.toLowerCase() || response?.transaction_status?.toLowerCase();
+      // Use normalized status from the edge function
+      const normalizedStatus = response?.normalized_status || 'UNKNOWN';
       
-      if (status === 'success' || status === 'completed' || status === 'successful') {
-        // Payment successful - update balance
+      if (normalizedStatus === 'SUCCESS' || response?.status === 'completed') {
+        // Payment successful
         setTransactionStatus('success');
-        setStatusMessage('Payment successful! Updating your balance...');
+        setStatusMessage('Payment successful! Your balance has been updated.');
         
         // Clear interval
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
         }
 
-        // Update balance
-        await supabase.functions.invoke('fastlipa-topup?action=update-balance', {
-          body: { 
-            transaction_id: tranId, 
-            user_id: user?.id, 
-            amount: parseInt(amount) 
-          },
-        });
-
-        // Refresh profile data
+        // Refresh profile data to get updated balance
         await refetchProfile();
         
         toast({
@@ -98,18 +87,13 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         });
 
         setTimeout(() => onOpenChange(false), 2000);
-      } else if (status === 'failed' || status === 'cancelled') {
+      } else if (normalizedStatus === 'FAILED' || response?.status === 'failed') {
         setTransactionStatus('failed');
         setStatusMessage('Payment failed or was cancelled.');
         
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
         }
-
-        // Mark as failed in database
-        await supabase.functions.invoke('fastlipa-topup?action=mark-failed', {
-          body: { transaction_id: tranId },
-        });
       } else {
         // Still pending
         checkCountRef.current += 1;
@@ -121,7 +105,7 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
             clearInterval(checkIntervalRef.current);
           }
           setTransactionStatus('failed');
-          setStatusMessage('Payment verification timed out. If you made the payment, please contact support.');
+          setStatusMessage('Payment verification timed out. If you made the payment, your balance will be updated shortly.');
         }
       }
     } catch (err) {
@@ -182,7 +166,7 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         description: 'Please check your phone to complete the payment.',
       });
 
-      // Start checking status every 5 seconds for 2 minutes
+      // Start checking status every 5 seconds for 2 minutes (frontend polling for UI update)
       checkCountRef.current = 0;
       checkIntervalRef.current = setInterval(() => {
         checkTransactionStatus(response.transaction_id);
