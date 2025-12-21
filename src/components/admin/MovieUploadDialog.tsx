@@ -24,6 +24,11 @@ const videoLinkSchema = z.object({
   url: z.string().url('Must be a valid URL'),
 });
 
+const videoLinkSchemaOptional = z.object({
+  name: z.string().optional().or(z.literal('')),
+  url: z.string().optional().or(z.literal('')),
+});
+
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   dj_name: z.string().min(1, 'DJ Name is required').max(100),
@@ -34,7 +39,16 @@ const movieSchema = z.object({
   google_drive_url: z.string().optional().or(z.literal('')),
   movie_type: z.enum(['single', 'season']),
   season_number: z.coerce.number().min(1).optional(),
-  video_links: z.array(videoLinkSchema).optional(),
+  video_links: z.array(videoLinkSchemaOptional).optional(),
+}).refine((data) => {
+  // For season type, validate that video_links have valid URLs
+  if (data.movie_type === 'season' && data.video_links) {
+    return data.video_links.every(link => link.name && link.url && link.url.startsWith('http'));
+  }
+  return true;
+}, {
+  message: 'All episode links must have a name and valid URL',
+  path: ['video_links'],
 });
 
 type MovieFormData = z.infer<typeof movieSchema>;
