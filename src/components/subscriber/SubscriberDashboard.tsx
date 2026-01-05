@@ -2,29 +2,30 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserPurchases } from '@/hooks/useMovies';
 import { useTopupHistory } from '@/hooks/useTopupHistory';
 import { TopupDialog } from './TopupDialog';
+import { useHasActiveSubscription } from '@/hooks/useSubscription';
 import { 
-  Wallet, 
-  Eye, 
-  TrendingUp, 
+  Crown,
   History,
   Loader2,
   CheckCircle2,
   XCircle,
   Clock,
-  CreditCard
+  CreditCard,
+  Calendar
 } from 'lucide-react';
 
 export function SubscriberDashboard() {
   const { user, profile } = useAuth();
-  const { data: purchases = [], isLoading } = useUserPurchases(user?.id);
   const { data: topupHistory = [], isLoading: isLoadingTopups } = useTopupHistory(user?.id);
+  const { data: hasSubscription } = useHasActiveSubscription(user?.id);
   const [topupOpen, setTopupOpen] = useState(false);
 
-  const totalSpent = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const moviesWatched = purchases.length;
+  const subscriptionExpiresAt = profile?.subscription_expires_at 
+    ? new Date(profile.subscription_expires_at) 
+    : null;
+  const isSubscriptionActive = subscriptionExpiresAt && subscriptionExpiresAt > new Date();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -48,6 +49,22 @@ export function SubscriberDashboard() {
     }
   };
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getDaysRemaining = () => {
+    if (!subscriptionExpiresAt) return 0;
+    const now = new Date();
+    const diffTime = subscriptionExpiresAt.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
   return (
     <div className="p-4 space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold">My Dashboard</h1>
@@ -55,69 +72,49 @@ export function SubscriberDashboard() {
         Welcome, {profile?.username || profile?.phone || 'User'}!
       </p>
       
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Wallet className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-lg font-bold text-primary">
-                  Tsh {profile?.balance?.toLocaleString() || 0}
+      {/* Subscription Status Card */}
+      <Card className={`bg-card border-2 ${isSubscriptionActive ? 'border-primary' : 'border-muted'}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-full ${isSubscriptionActive ? 'bg-primary/10' : 'bg-muted'}`}>
+              <Crown className={`h-8 w-8 ${isSubscriptionActive ? 'text-primary' : 'text-muted-foreground'}`} />
+            </div>
+            <div className="flex-1">
+              <h2 className="font-bold text-lg">
+                {isSubscriptionActive ? 'Premium Active' : 'No Active Subscription'}
+              </h2>
+              {isSubscriptionActive && subscriptionExpiresAt && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Expires: {formatDate(subscriptionExpiresAt)}</span>
+                  <span className="text-primary font-medium">({getDaysRemaining()} days left)</span>
+                </div>
+              )}
+              {!isSubscriptionActive && (
+                <p className="text-sm text-muted-foreground">
+                  Subscribe to access all premium movies
                 </p>
-              </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-views/10">
-                <Eye className="h-5 w-5 text-views" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Watched</p>
-                <p className="text-lg font-bold">{moviesWatched}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-price/10">
-                <TrendingUp className="h-5 w-5 text-price" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Spent</p>
-                <p className="text-lg font-bold text-price">
-                  Tsh {totalSpent.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
         <Button 
-          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => setTopupOpen(true)}
         >
-          <Wallet className="h-4 w-4 mr-2" />
-          Top Up Balance
+          <Crown className="h-4 w-4 mr-2" />
+          {isSubscriptionActive ? 'Extend Subscription' : 'Subscribe Now'}
         </Button>
       </div>
 
-      {/* Topup History */}
+      {/* Subscription History */}
       <div className="space-y-3">
         <h2 className="font-semibold flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
-          Topup History
+          Subscription History
         </h2>
         
         {isLoadingTopups ? (
@@ -127,7 +124,7 @@ export function SubscriberDashboard() {
         ) : topupHistory.length === 0 ? (
           <Card className="bg-muted/50">
             <CardContent className="p-4 text-center text-muted-foreground">
-              No topup transactions yet
+              No subscription transactions yet
             </CardContent>
           </Card>
         ) : (
@@ -148,46 +145,6 @@ export function SubscriberDashboard() {
                   </div>
                   <span className={`text-xs font-medium capitalize ${getStatusColor(tx.status)}`}>
                     {tx.status}
-                  </span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Purchase History */}
-      <div className="space-y-3">
-        <h2 className="font-semibold flex items-center gap-2">
-          <History className="h-4 w-4" />
-          Purchase History
-        </h2>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : purchases.length === 0 ? (
-          <Card className="bg-muted/50">
-            <CardContent className="p-4 text-center text-muted-foreground">
-              No purchases yet
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {purchases.map((purchase) => (
-              <Card key={purchase.id} className="bg-card">
-                <CardContent className="p-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {(purchase as any).movies?.title || 'Movie'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(purchase.purchased_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-price">
-                    Tsh {purchase.amount.toLocaleString()}
                   </span>
                 </CardContent>
               </Card>

@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, Crown } from 'lucide-react';
+import { useSubscriptionPrice } from '@/hooks/useSubscription';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface TopupDialogProps {
   open: boolean;
@@ -15,8 +17,9 @@ interface TopupDialogProps {
 
 export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user, profile, refetchProfile } = useAuth();
-  const [amount, setAmount] = useState('');
+  const { data: subscriptionPrice, isLoading: priceLoading } = useSubscriptionPrice();
   const [isLoading, setIsLoading] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -37,7 +40,6 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setAmount('');
       setTransactionId(null);
       setCheckingStatus(false);
       setStatusMessage(null);
@@ -56,7 +58,6 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         body: { transaction_id: tranId },
       });
 
-      // Parse response if needed
       const response = typeof data === 'string' ? JSON.parse(data) : data;
       console.log('Status check response:', response);
 
@@ -65,25 +66,23 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         return;
       }
 
-      // Use normalized status from the edge function
       const normalizedStatus = response?.normalized_status || 'UNKNOWN';
       
       if (normalizedStatus === 'SUCCESS' || response?.status === 'completed') {
-        // Payment successful
         setTransactionStatus('success');
-        setStatusMessage('Payment successful! Your balance has been updated.');
+        setStatusMessage('Payment successful! Your subscription is now active.');
         
-        // Clear interval
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
         }
 
-        // Refresh profile data to get updated balance
+        // Refresh profile and subscription status
         await refetchProfile();
+        queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
         
         toast({
-          title: 'Topup Successful!',
-          description: `Tsh ${parseInt(amount).toLocaleString()} has been added to your balance.`,
+          title: 'Subscription Activated!',
+          description: 'You now have access to all premium movies for 30 days.',
         });
 
         setTimeout(() => onOpenChange(false), 2000);
@@ -95,17 +94,15 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
           clearInterval(checkIntervalRef.current);
         }
       } else {
-        // Still pending
         checkCountRef.current += 1;
         setStatusMessage(`Checking payment status... (${checkCountRef.current}/24)`);
         
-        // Stop checking after 2 minutes (24 checks * 5 seconds)
         if (checkCountRef.current >= 24) {
           if (checkIntervalRef.current) {
             clearInterval(checkIntervalRef.current);
           }
           setTransactionStatus('failed');
-          setStatusMessage('Payment verification timed out. If you made the payment, your balance will be updated shortly.');
+          setStatusMessage('Payment verification timed out. If you made the payment, your subscription will be activated shortly.');
         }
       }
     } catch (err) {
@@ -113,21 +110,20 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
     }
   };
 
-  const handleTopup = async () => {
+  const handleSubscribe = async () => {
     if (!user || !profile) {
       toast({
         title: 'Error',
-        description: 'Please sign in to top up.',
+        description: 'Please sign in to subscribe.',
         variant: 'destructive',
       });
       return;
     }
 
-    const amountNum = parseInt(amount);
-    if (!amountNum || amountNum < 500) {
+    if (!subscriptionPrice) {
       toast({
-        title: 'Invalid Amount',
-        description: 'Minimum topup amount is Tsh 500',
+        title: 'Error',
+        description: 'Could not load subscription price. Please try again.',
         variant: 'destructive',
       });
       return;
@@ -137,16 +133,16 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
     setStatusMessage('Initiating payment...');
 
     try {
-      const { data, error } = await supabase.functions.invoke('fastlipa-topup?action=create', {
+      const { data, error } = await supabase.functions.invoke('fastlipa-topup?action=subscribe', {
         body: {
-          amount: amountNum,
+          amount: subscriptionPrice,
           phone_number: profile.phone,
           user_id: user.id,
           name: profile.username || 'User',
         },
       });
 
-      console.log('Topup response:', data);
+      console.log('Subscribe response:', data);
 
       if (error) throw error;
 
@@ -166,17 +162,16 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
         description: 'Please check your phone to complete the payment.',
       });
 
-      // Start checking status every 5 seconds for 2 minutes (frontend polling for UI update)
       checkCountRef.current = 0;
       checkIntervalRef.current = setInterval(() => {
         checkTransactionStatus(response.transaction_id);
       }, 5000);
 
     } catch (err: any) {
-      console.error('Topup error:', err);
+      console.error('Subscribe error:', err);
       toast({
-        title: 'Topup Failed',
-        description: err.message || 'Failed to initiate topup. Please try again.',
+        title: 'Subscription Failed',
+        description: err.message || 'Failed to initiate subscription. Please try again.',
         variant: 'destructive',
       });
       setStatusMessage(null);
@@ -189,12 +184,30 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Top Up Balance</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-primary" />
+            Subscribe to Premium
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {!checkingStatus ? (
             <>
+              <div className="p-4 rounded-xl bg-primary/10 text-center space-y-2">
+                <Crown className="h-12 w-12 mx-auto text-primary" />
+                <h3 className="text-lg font-bold">Monthly Premium</h3>
+                {priceLoading ? (
+                  <Loader2 className="h-5 w-5 mx-auto animate-spin" />
+                ) : (
+                  <p className="text-2xl font-bold text-primary">
+                    Tsh {subscriptionPrice?.toLocaleString()}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  30 days access to all premium movies
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Phone Number</Label>
                 <Input 
@@ -207,36 +220,10 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (Tsh)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter amount (min 500)"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min={500}
-                />
-              </div>
-
-              <div className="flex gap-2 flex-wrap">
-                {[500, 1000, 2000, 5000, 10000].map((preset) => (
-                  <Button
-                    key={preset}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAmount(preset.toString())}
-                    className="flex-1"
-                  >
-                    {preset.toLocaleString()}
-                  </Button>
-                ))}
-              </div>
-
               <Button 
-                onClick={handleTopup} 
+                onClick={handleSubscribe} 
                 className="w-full" 
-                disabled={isLoading || !amount}
+                disabled={isLoading || priceLoading}
               >
                 {isLoading ? (
                   <>
@@ -244,7 +231,10 @@ export function TopupDialog({ open, onOpenChange }: TopupDialogProps) {
                     Processing...
                   </>
                 ) : (
-                  `Top Up Tsh ${parseInt(amount || '0').toLocaleString()}`
+                  <>
+                    <Crown className="h-4 w-4 mr-2" />
+                    Subscribe Now
+                  </>
                 )}
               </Button>
             </>

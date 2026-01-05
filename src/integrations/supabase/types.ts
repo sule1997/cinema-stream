@@ -177,6 +177,7 @@ export type Database = {
           id: string
           is_blocked: boolean | null
           phone: string
+          subscription_expires_at: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -188,6 +189,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean | null
           phone: string
+          subscription_expires_at?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -199,6 +201,7 @@ export type Database = {
           id?: string
           is_blocked?: boolean | null
           phone?: string
+          subscription_expires_at?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null

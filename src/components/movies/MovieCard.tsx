@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { Eye, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Movie, getImageUrl } from '@/hooks/useMovies';
@@ -8,11 +8,6 @@ interface MovieCardProps {
   movie: Movie;
   onViewIncrement?: (movieId: string) => void;
 }
-
-const formatPrice = (price: number): string => {
-  if (price === 0) return 'FREE';
-  return `Tsh ${price.toLocaleString()}`;
-};
 
 const formatViews = (views: number): string => {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
@@ -38,11 +33,7 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewIncrement?.(movie.id);
-    if (isFree) {
-      navigate(`/movie/${movie.id}`);
-    } else {
-      navigate(`/movie/${movie.id}?action=buy`);
-    }
+    navigate(`/movie/${movie.id}`);
   };
 
   // Determine badge content
@@ -53,10 +44,12 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
     if (isFree) {
       return 'FREE';
     }
+    // Premium movies show premium badge
     return null;
   };
 
   const badgeContent = getBadgeContent();
+  const isPremium = !isFree;
 
   return (
     <div 
@@ -83,6 +76,14 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
             {badgeContent}
           </div>
         )}
+
+        {/* Premium Badge */}
+        {isPremium && !isSeason && (
+          <div className="absolute top-2 right-2 flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full shadow-md bg-accent text-accent-foreground">
+            <Crown className="h-3 w-3" />
+            Premium
+          </div>
+        )}
       </div>
 
       {/* Movie Info */}
@@ -93,10 +94,15 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
 
         <div className="flex items-center justify-between text-xs">
           <span className={cn(
-            "font-bold",
-            isFree ? "text-primary" : "text-price"
+            "font-bold flex items-center gap-1",
+            isFree ? "text-primary" : "text-accent-foreground"
           )}>
-            {formatPrice(movie.price)}
+            {isFree ? 'FREE' : (
+              <>
+                <Crown className="h-3 w-3" />
+                Premium
+              </>
+            )}
           </span>
           
           <div className="flex items-center gap-1 text-muted-foreground">
@@ -108,15 +114,10 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
         <Button
           onClick={handleButtonClick}
           size="sm"
-          variant={isFree ? "default" : "secondary"}
-          className={cn(
-            "w-full text-xs font-semibold transition-all duration-200",
-            isFree
-              ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-              : "bg-price hover:bg-price/90 text-background border-0"
-          )}
+          variant="default"
+          className="w-full text-xs font-semibold transition-all duration-200 bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          {isFree ? 'Watch Now' : 'Buy Now'}
+          Watch Now
         </Button>
       </div>
     </div>
