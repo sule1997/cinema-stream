@@ -1,17 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, Download, Play, ShoppingCart, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Eye, Download, Play, Loader2, ExternalLink, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useMovie, useHasPurchased, usePurchaseMovie, useIncrementViews, getImageUrl } from '@/hooks/useMovies';
+import { useMovie, useIncrementViews, getImageUrl } from '@/hooks/useMovies';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useHasActiveSubscription } from '@/hooks/useSubscription';
 import VideoPlayer from '@/components/video/VideoPlayer';
-
-const formatPrice = (price: number): string => {
-  if (price === 0) return 'FREE';
-  return `Tsh ${price.toLocaleString()}`;
-};
 
 const formatViews = (views: number): string => {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
@@ -31,8 +27,7 @@ const MovieDetail = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   
   const { data: movie, isLoading } = useMovie(id || '');
-  const { data: hasPurchased } = useHasPurchased(user?.id, id);
-  const purchaseMutation = usePurchaseMovie();
+  const { data: hasSubscription } = useHasActiveSubscription(user?.id);
   const incrementViews = useIncrementViews();
 
   if (isLoading) {
@@ -56,7 +51,8 @@ const MovieDetail = () => {
   }
 
   const isFree = movie.price === 0;
-  const canWatch = isFree || hasPurchased;
+  const isPremium = !isFree;
+  const canWatch = isFree || hasSubscription;
   const imageUrl = getImageUrl(movie.image_path);
   const isSeason = movie.movie_type === 'season';
 
@@ -69,6 +65,24 @@ const MovieDetail = () => {
       });
       return;
     }
+
+    // Check if premium and user needs subscription
+    if (isPremium && !hasSubscription) {
+      if (!user) {
+        toast({
+          title: "Sign In Required",
+          description: "Please sign in to watch premium movies.",
+        });
+        navigate('/auth');
+        return;
+      }
+      toast({
+        title: "Subscription Required",
+        description: "Please subscribe to watch premium movies.",
+      });
+      navigate('/dashboard');
+      return;
+    }
     
     incrementViews.mutate(movie.id);
     setIsPlaying(true);
@@ -79,44 +93,16 @@ const MovieDetail = () => {
     });
   };
 
-  const handleBuy = async () => {
+  const handleSubscribe = () => {
     if (!user) {
       toast({
         title: "Sign In Required",
-        description: "Please sign in to purchase this movie.",
+        description: "Please sign in to subscribe.",
       });
       navigate('/auth');
       return;
     }
-
-    // Check user balance
-    if (profile && profile.balance < movie.price) {
-      toast({
-        title: "Insufficient Balance",
-        description: `You need Tsh ${movie.price.toLocaleString()} to purchase this movie. Your balance is Tsh ${profile.balance.toLocaleString()}.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await purchaseMutation.mutateAsync({
-        userId: user.id,
-        movieId: movie.id,
-        amount: movie.price,
-      });
-
-      toast({
-        title: "Purchase Successful",
-        description: `You can now watch ${toSentenceCase(movie.title)}!`,
-      });
-    } catch (error) {
-      toast({
-        title: "Purchase Failed",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    }
+    navigate('/dashboard');
   };
 
   const handleDownload = (url?: string) => {
@@ -132,7 +118,6 @@ const MovieDetail = () => {
     }
   };
 
-  // Always use video_url for playback, not episode links
   const currentVideoUrl = movie.video_url;
 
   return (
@@ -198,12 +183,17 @@ const MovieDetail = () => {
           </div>
         </div>
 
-        {/* Price */}
+        {/* Premium/Free Badge */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
           <div>
-            <p className="text-xs text-muted-foreground">Price</p>
-            <p className={`text-xl font-bold ${isFree ? 'text-primary' : 'text-price'}`}>
-              {formatPrice(movie.price)}
+            <p className="text-xs text-muted-foreground">Access</p>
+            <p className={`text-xl font-bold flex items-center gap-2 ${isFree ? 'text-primary' : 'text-accent-foreground'}`}>
+              {isFree ? 'FREE' : (
+                <>
+                  <Crown className="h-5 w-5" />
+                  Premium
+                </>
+              )}
             </p>
           </div>
           <div className="text-right">
@@ -271,16 +261,11 @@ const MovieDetail = () => {
             </>
           ) : (
             <Button 
-              onClick={handleBuy}
+              onClick={handleSubscribe}
               className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground text-lg font-semibold"
-              disabled={purchaseMutation.isPending}
             >
-              {purchaseMutation.isPending ? (
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              ) : (
-                <ShoppingCart className="h-5 w-5 mr-2" />
-              )}
-              Buy for {formatPrice(movie.price)}
+              <Crown className="h-5 w-5 mr-2" />
+              Subscribe to Watch
             </Button>
           )}
           

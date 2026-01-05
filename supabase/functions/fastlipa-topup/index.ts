@@ -40,19 +40,20 @@ function normalizeFastlipaStatus(rawStatus: string | undefined): 'SUCCESS' | 'PE
   return 'UNKNOWN';
 }
 
-// Background polling function
-async function pollTransactionStatus(
+// Background polling function for subscription payments
+async function pollSubscriptionStatus(
   supabase: any,
   apiKey: string,
   transactionId: string,
   userId: string,
   amount: number,
-  dbId: string
+  dbId: string,
+  isSubscription: boolean = true
 ) {
   const maxAttempts = 24; // 2 minutes with 5 second intervals
   let attempts = 0;
 
-  console.log(`Starting background poll for transaction ${transactionId}, user ${userId}, amount ${amount}`);
+  console.log(`Starting background poll for transaction ${transactionId}, user ${userId}, amount ${amount}, isSubscription: ${isSubscription}`);
 
   while (attempts < maxAttempts) {
     attempts++;
@@ -78,28 +79,65 @@ async function pollTransactionStatus(
       console.log(`Poll ${attempts} - Normalized status: ${normalizedStatus}`);
 
       if (normalizedStatus === 'SUCCESS') {
-        console.log(`Transaction ${transactionId} completed successfully, updating balance...`);
+        console.log(`Transaction ${transactionId} completed successfully`);
         
-        // Get current balance
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('balance')
-          .eq('user_id', userId)
-          .single();
+        if (isSubscription) {
+          // For subscription: set subscription_expires_at to 30 days from now
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 30);
+          
+          // Get current subscription to extend if active
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_expires_at')
+            .eq('user_id', userId)
+            .single();
+          
+          let newExpiryDate = expiresAt;
+          
+          // If user has active subscription, extend from current expiry
+          if (profile?.subscription_expires_at) {
+            const currentExpiry = new Date(profile.subscription_expires_at);
+            if (currentExpiry > new Date()) {
+              newExpiryDate = new Date(currentExpiry);
+              newExpiryDate.setDate(newExpiryDate.getDate() + 30);
+            }
+          }
+          
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              subscription_expires_at: newExpiryDate.toISOString(), 
+              updated_at: new Date().toISOString() 
+            })
+            .eq('user_id', userId);
 
-        const currentBalance = profile?.balance || 0;
-        const newBalance = currentBalance + amount;
-
-        // Update user balance
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ balance: newBalance, updated_at: new Date().toISOString() })
-          .eq('user_id', userId);
-
-        if (updateError) {
-          console.error('Failed to update balance:', updateError);
+          if (updateError) {
+            console.error('Failed to update subscription:', updateError);
+          } else {
+            console.log(`Subscription updated, expires at: ${newExpiryDate.toISOString()}`);
+          }
         } else {
-          console.log(`Balance updated from ${currentBalance} to ${newBalance}`);
+          // For regular topup: update balance
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+
+          const currentBalance = profile?.balance || 0;
+          const newBalance = currentBalance + amount;
+
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ balance: newBalance, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+
+          if (updateError) {
+            console.error('Failed to update balance:', updateError);
+          } else {
+            console.log(`Balance updated from ${currentBalance} to ${newBalance}`);
+          }
         }
 
         // Update transaction status
@@ -173,14 +211,15 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
 
-    if (action === 'create') {
-      // Create a new topup transaction
+    if (action === 'create' || action === 'subscribe') {
+      // Create a new topup/subscription transaction
       const body: TopupRequest = await req.json();
-      console.log('Creating topup transaction:', body);
+      const isSubscription = action === 'subscribe';
+      console.log(`Creating ${isSubscription ? 'subscription' : 'topup'} transaction:`, body);
 
-      if (!body.amount || body.amount < 500) {
+      if (!body.amount || body.amount < 100) {
         return new Response(
-          JSON.stringify({ error: 'Minimum topup amount is Tsh 500' }),
+          JSON.stringify({ error: 'Invalid amount' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -204,7 +243,7 @@ Deno.serve(async (req) => {
 
       if (!fastlipaResponse.ok) {
         return new Response(
-          JSON.stringify({ error: fastlipaData.message || 'Failed to initiate topup' }),
+          JSON.stringify({ error: fastlipaData.message || 'Failed to initiate payment' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -236,24 +275,26 @@ Deno.serve(async (req) => {
       const runtime = (globalThis as any).EdgeRuntime;
       if (runtime && typeof runtime.waitUntil === 'function') {
         runtime.waitUntil(
-          pollTransactionStatus(
+          pollSubscriptionStatus(
             supabase,
             apiKey,
             transactionId,
             body.user_id,
             body.amount,
-            transaction.id
+            transaction.id,
+            isSubscription
           )
         );
       } else {
         // Fallback: run polling without waitUntil (may timeout)
-        pollTransactionStatus(
+        pollSubscriptionStatus(
           supabase,
           apiKey,
           transactionId,
           body.user_id,
           body.amount,
-          transaction.id
+          transaction.id,
+          isSubscription
         ).catch(console.error);
       }
 
@@ -261,7 +302,9 @@ Deno.serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           transaction_id: transactionId,
-          message: 'Topup initiated. Please complete the payment on your phone.',
+          message: isSubscription 
+            ? 'Subscription payment initiated. Please complete the payment on your phone.' 
+            : 'Topup initiated. Please complete the payment on your phone.',
           db_id: transaction.id
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminStats, UserManagement } from '@/components/admin/AdminStats';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { ApiSettings } from '@/components/admin/ApiSettings';
+import { SubscriptionSettings } from '@/components/admin/SubscriptionSettings';
 import { WithdrawRequests } from '@/components/admin/WithdrawRequests';
 import { MovieReview } from '@/components/admin/MovieReview';
 import { DjStats, DjMoviesList } from '@/components/admin/DjDashboard';
@@ -18,7 +19,8 @@ import {
   FolderTree,
   Key,
   Clock,
-  Film
+  Film,
+  CreditCard
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -83,7 +85,7 @@ const Dashboard = () => {
       <AdminStats />
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="users" className="text-xs px-1">
             <Users className="h-4 w-4" />
           </TabsTrigger>
@@ -95,6 +97,9 @@ const Dashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="categories" className="text-xs px-1">
             <FolderTree className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="text-xs px-1">
+            <CreditCard className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="api" className="text-xs px-1">
             <Key className="h-4 w-4" />
@@ -115,6 +120,10 @@ const Dashboard = () => {
         
         <TabsContent value="categories" className="mt-4">
           <CategoryManagement />
+        </TabsContent>
+
+        <TabsContent value="subscription" className="mt-4">
+          <SubscriptionSettings />
         </TabsContent>
         
         <TabsContent value="api" className="mt-4">

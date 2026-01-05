@@ -10,6 +10,7 @@ interface Profile {
   phone: string;
   username: string | null;
   balance: number;
+  subscription_expires_at: string | null;
 }
 
 interface AuthContextType {
