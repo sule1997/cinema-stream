@@ -3,6 +3,7 @@ import { Eye, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Movie, getImageUrl } from '@/hooks/useMovies';
+import { generateMovieSlug } from '@/utils/slug';
 
 interface MovieCardProps {
   movie: Movie;
@@ -25,15 +26,17 @@ export function MovieCard({ movie, onViewIncrement }: MovieCardProps) {
   const isSeason = movie.movie_type === 'season';
   const imageUrl = getImageUrl(movie.image_path);
 
+  const movieSlug = generateMovieSlug(movie.title, movie.id);
+
   const handleClick = () => {
     onViewIncrement?.(movie.id);
-    navigate(`/movie/${movie.id}`);
+    navigate(`/movie/${movieSlug}`);
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewIncrement?.(movie.id);
-    navigate(`/movie/${movie.id}`);
+    navigate(`/movie/${movieSlug}`);
   };
 
   // Determine badge content

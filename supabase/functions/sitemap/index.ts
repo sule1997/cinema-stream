@@ -16,6 +16,20 @@ interface Movie {
   updated_at: string;
 }
 
+// Generate URL-friendly slug from movie title and ID
+function generateMovieSlug(title: string, id: string): string {
+  const slug = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .substring(0, 50);
+  
+  const shortId = id.slice(-8);
+  return `${slug}-${shortId}`;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -39,12 +53,13 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Get the base URL from environment or use default
-    const baseUrl = Deno.env.get('SITE_URL') || 'https://id-preview--18ae8808-87fc-4968-a6e0-3009bf75ca14.lovable.app';
+    // Get the base URL from environment - MUST be set for production
+    const baseUrl = Deno.env.get('SITE_URL') || 'https://your-domain.com';
 
     // Generate sitemap XML
     const urlEntries = (movies || []).map((movie: Movie) => {
       const lastmod = new Date(movie.updated_at).toISOString().split('T')[0];
+      const movieSlug = generateMovieSlug(movie.title, movie.id);
       
       // Build description with DJ name and episode info
       let description = movie.dj_name;
@@ -69,7 +84,12 @@ Deno.serve(async (req) => {
       };
 
       return `  <url>
-    <loc>${baseUrl}/movie/${movie.id}</loc>
+    <loc>${baseUrl}/movie/${movieSlug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <description>${escapeXml(description)}</description>
+  </url>`;
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

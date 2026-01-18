@@ -52,14 +52,18 @@ export const useMovies = (category?: string) => {
   });
 };
 
-export const useMovie = (id: string) => {
+export const useMovie = (slug: string) => {
+  // Extract the short ID (last 8 chars) from the slug
+  const shortId = slug?.slice(-8) || '';
+  
   return useQuery({
-    queryKey: ['movie', id],
+    queryKey: ['movie', slug],
     queryFn: async () => {
+      // Find movie where ID ends with the short ID
       const { data, error } = await supabase
         .from('movies')
         .select('*')
-        .eq('id', id)
+        .ilike('id', `%${shortId}`)
         .maybeSingle();
       
       if (error) throw error;
@@ -71,7 +75,7 @@ export const useMovie = (id: string) => {
         video_links: (Array.isArray(data.video_links) ? data.video_links : []) as unknown as VideoLink[],
       } as Movie;
     },
-    enabled: !!id,
+    enabled: !!slug && shortId.length === 8,
   });
 };
 

@@ -36,7 +36,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/movie/:id" element={<MovieDetail />} />
+              <Route path="/movie/:slug" element={<MovieDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
