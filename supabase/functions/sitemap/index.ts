@@ -90,11 +90,6 @@ Deno.serve(async (req) => {
     <priority>0.8</priority>
     <description>${escapeXml(description)}</description>
   </url>`;
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <description>${escapeXml(description)}</description>
-  </url>`;
     }).join('\n');
 
     // Add static pages
