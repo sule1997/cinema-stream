@@ -20,13 +20,13 @@ const toSentenceCase = (str: string): string => {
 };
 
 const MovieDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
   
-  const { data: movie, isLoading } = useMovie(id || '');
+  const { data: movie, isLoading } = useMovie(slug || '');
   const { data: hasSubscription } = useHasActiveSubscription(user?.id);
   const incrementViews = useIncrementViews();
 
