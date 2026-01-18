@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovieGrid } from '@/components/movies/MovieGrid';
@@ -12,6 +12,31 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [isSearchVisible, setIsSearchVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Handle scroll direction to show/hide search
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < 10) {
+        // Always show at top of page
+        setIsSearchVisible(true);
+      } else if (currentScrollY > lastScrollY.current) {
+        // Scrolling down - hide search
+        setIsSearchVisible(false);
+      } else {
+        // Scrolling up - show search
+        setIsSearchVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   const { data: movies = [], isLoading } = useMovies(selectedCategory || undefined);
   const incrementViews = useIncrementViews();
@@ -109,6 +134,7 @@ const Index = () => {
           onSearchChange={handleSearchChange}
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
+          isVisible={isSearchVisible}
         />
 
         {/* Category Header */}
