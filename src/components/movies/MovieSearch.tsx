@@ -15,6 +15,7 @@ interface MovieSearchProps {
   onSearchChange: (query: string) => void;
   activeFilter: FilterType;
   onFilterChange: (filter: FilterType) => void;
+  isVisible?: boolean;
 }
 
 const filterOptions: { value: FilterType; label: string }[] = [
@@ -29,11 +30,16 @@ export function MovieSearch({
   onSearchChange,
   activeFilter,
   onFilterChange,
+  isVisible = true,
 }: MovieSearchProps) {
   const activeLabel = filterOptions.find((f) => f.value === activeFilter)?.label || 'All Movies';
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 bg-card/95 backdrop-blur-sm border-b border-border sticky top-14 z-10">
+    <div 
+      className={`flex items-center gap-2 px-4 py-3 bg-card/95 backdrop-blur-sm border-b border-border sticky top-14 z-10 transition-all duration-300 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
+      }`}
+    >
       {/* Search Input */}
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
