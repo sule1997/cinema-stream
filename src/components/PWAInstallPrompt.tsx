@@ -95,44 +95,44 @@ export function PWAInstallPrompt() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-sm bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 border-2 border-blue-500/30 shadow-2xl">
+      <DialogContent className="max-w-sm bg-card border border-border shadow-2xl">
         <DialogHeader>
-          <div className="mx-auto w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-xl animate-pulse-glow">
-            <Download className="h-12 w-12 text-white" />
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Download className="h-10 w-10 text-primary" />
           </div>
-          <DialogTitle className="text-center text-3xl font-bold text-white mb-2">
-            Install Muvietz
+          <DialogTitle className="text-center text-2xl font-bold text-foreground">
+            Install Mobile App
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           {isIOS ? (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-blue-900/40 border border-blue-500/20">
-                <div className="space-y-3 text-sm text-blue-100">
+              <div className="p-4 rounded-xl bg-muted border border-border">
+                <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
                       1
                     </div>
-                    <p>Tap <Share className="h-4 w-4 inline mx-1" /> Share</p>
+                    <p className="text-foreground">Tap <Share className="h-4 w-4 inline mx-1 text-primary" /> Share</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
                       2
                     </div>
-                    <p>Add to Home Screen</p>
+                    <p className="text-foreground">Add to Home Screen</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center shrink-0 text-white font-bold">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">
                       3
                     </div>
-                    <p>Tap Add</p>
+                    <p className="text-foreground">Tap Add</p>
                   </div>
                 </div>
               </div>
               <Button
                 onClick={handleClose}
-                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               >
                 Got it!
               </Button>
@@ -142,7 +142,7 @@ export function PWAInstallPrompt() {
               <Button
                 onClick={handleInstallClick}
                 disabled={!deferredPrompt}
-                className="w-full h-14 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-700 hover:via-blue-600 hover:to-blue-700 text-white text-lg font-bold shadow-xl"
+                className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold shadow-lg"
               >
                 <Download className="h-6 w-6 mr-2" />
                 Install Now
@@ -150,7 +150,7 @@ export function PWAInstallPrompt() {
               <Button
                 variant="ghost"
                 onClick={handleClose}
-                className="w-full text-sm text-blue-200 hover:text-white hover:bg-blue-900/40"
+                className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
               >
                 Maybe Later
               </Button>
@@ -160,7 +160,7 @@ export function PWAInstallPrompt() {
 
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 text-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          className="absolute right-4 top-4 rounded-sm opacity-70 text-foreground transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <X className="h-5 w-5" />
           <span className="sr-only">Close</span>
