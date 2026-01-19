@@ -59,20 +59,27 @@ export const useMovie = (slug: string) => {
   return useQuery({
     queryKey: ['movie', slug],
     queryFn: async () => {
-      // Find movie where ID ends with the short ID
-      const { data, error } = await supabase
+      // Get all approved movies and find the one where the unhyphenated ID ends with shortId
+      const { data: movies, error } = await supabase
         .from('movies')
         .select('*')
-        .ilike('id', `%${shortId}`)
-        .maybeSingle();
+        .eq('status', 'approved');
       
       if (error) throw error;
-      if (!data) return null;
+      if (!movies || movies.length === 0) return null;
+      
+      // Find movie where unhyphenated UUID ends with our shortId
+      const movie = movies.find(m => {
+        const cleanId = m.id.replace(/-/g, '');
+        return cleanId.endsWith(shortId);
+      });
+      
+      if (!movie) return null;
       
       return {
-        ...data,
-        movie_type: (data.movie_type || 'single') as 'single' | 'season',
-        video_links: (Array.isArray(data.video_links) ? data.video_links : []) as unknown as VideoLink[],
+        ...movie,
+        movie_type: (movie.movie_type || 'single') as 'single' | 'season',
+        video_links: (Array.isArray(movie.video_links) ? movie.video_links : []) as unknown as VideoLink[],
       } as Movie;
     },
     enabled: !!slug && shortId.length === 8,

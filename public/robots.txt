@@ -1,3 +1,5 @@
+# Robots.txt for search engine crawling
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +14,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap location
+Sitemap: https://mixjamz.com/sitemap.xml
+
+# Disallow admin and auth pages
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /settings

@@ -26,7 +26,9 @@ function generateMovieSlug(title: string, id: string): string {
     .replace(/-+/g, '-')
     .substring(0, 50);
   
-  const shortId = id.slice(-8);
+  // Remove hyphens from UUID and take last 8 chars for uniqueness
+  const cleanId = id.replace(/-/g, '');
+  const shortId = cleanId.slice(-8);
   return `${slug}-${shortId}`;
 }
 
