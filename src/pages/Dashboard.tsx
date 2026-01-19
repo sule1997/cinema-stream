@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminStats, UserManagement } from '@/components/admin/AdminStats';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { ApiSettings } from '@/components/admin/ApiSettings';
+import { AdsenseSettings } from '@/components/admin/AdsenseSettings';
 import { SubscriptionSettings } from '@/components/admin/SubscriptionSettings';
 import { WithdrawRequests } from '@/components/admin/WithdrawRequests';
 import { MovieReview } from '@/components/admin/MovieReview';
@@ -20,7 +21,8 @@ import {
   Key,
   Clock,
   Film,
-  CreditCard
+  CreditCard,
+  MonitorPlay
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -85,7 +87,7 @@ const Dashboard = () => {
       <AdminStats />
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="users" className="text-xs px-1">
             <Users className="h-4 w-4" />
           </TabsTrigger>
@@ -103,6 +105,9 @@ const Dashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="api" className="text-xs px-1">
             <Key className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="adsense" className="text-xs px-1">
+            <MonitorPlay className="h-4 w-4" />
           </TabsTrigger>
         </TabsList>
         
@@ -128,6 +133,10 @@ const Dashboard = () => {
         
         <TabsContent value="api" className="mt-4">
           <ApiSettings />
+        </TabsContent>
+
+        <TabsContent value="adsense" className="mt-4">
+          <AdsenseSettings />
         </TabsContent>
       </Tabs>
 
