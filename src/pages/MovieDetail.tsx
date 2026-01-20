@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useHasActiveSubscription } from '@/hooks/useSubscription';
 import VideoPlayer from '@/components/video/VideoPlayer';
-
+import { AdUnit } from '@/components/ads/AdUnit';
 const formatViews = (views: number): string => {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
   if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
@@ -245,6 +245,11 @@ const MovieDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Display Ad */}
+        <div className="flex justify-center">
+          <AdUnit type="display" />
+        </div>
 
         {/* Action Buttons */}
         <div className="space-y-3 pb-4">
