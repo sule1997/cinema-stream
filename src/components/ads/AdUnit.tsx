@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { useAdsenseSettings } from '@/hooks/useAdsense';
 
 interface AdUnitProps {
@@ -9,10 +9,15 @@ interface AdUnitProps {
 export function AdUnit({ type, className = '' }: AdUnitProps) {
   const { data: settings } = useAdsenseSettings();
   const adContainerRef = useRef<HTMLDivElement>(null);
+  const adInitialized = useRef(false);
+  const uniqueId = useId();
   const adCode = type === 'display' ? settings?.displayAd : settings?.inArticleAd;
 
   useEffect(() => {
-    if (!adCode || !adContainerRef.current) return;
+    if (!adCode || !adContainerRef.current || adInitialized.current) return;
+
+    // Mark as initialized to prevent duplicate ad loading
+    adInitialized.current = true;
 
     // Clear previous content
     adContainerRef.current.innerHTML = '';
@@ -45,23 +50,44 @@ export function AdUnit({ type, className = '' }: AdUnitProps) {
       script.parentNode?.replaceChild(newScript, script);
     });
 
-    // Push to adsbygoogle if available
-    try {
-      // @ts-ignore
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
-      // AdSense may not be loaded yet
-    }
-  }, [adCode]);
+    // Push to adsbygoogle after a small delay to ensure DOM is ready
+    const pushAd = () => {
+      try {
+        // @ts-ignore
+        if (window.adsbygoogle && adContainerRef.current?.querySelector('.adsbygoogle')) {
+          // @ts-ignore
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
+      } catch (e) {
+        console.log('AdSense push error:', e);
+      }
+    };
+
+    // Try immediately and also with a delay for SPA navigation
+    pushAd();
+    const timeoutId = setTimeout(pushAd, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [adCode, uniqueId]);
+
+  // Reset initialization when component unmounts and remounts
+  useEffect(() => {
+    return () => {
+      adInitialized.current = false;
+    };
+  }, []);
 
   if (!adCode) return null;
 
   return (
     <div 
       ref={adContainerRef}
+      key={uniqueId}
       className={`ad-unit rounded-lg overflow-hidden bg-muted/30 ${className}`}
       style={{ 
-        minHeight: '100px',
+        minHeight: '90px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
