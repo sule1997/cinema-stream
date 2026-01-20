@@ -247,8 +247,8 @@ const MovieDetail = () => {
         )}
 
         {/* Display Ad */}
-        <div className="flex justify-center">
-          <AdUnit type="display" />
+        <div className="w-full">
+          <AdUnit type="display" className="w-full min-h-[90px]" />
         </div>
 
         {/* Action Buttons */}
