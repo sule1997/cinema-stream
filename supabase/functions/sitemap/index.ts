@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the base URL from environment - MUST be set for production
-    const baseUrl = Deno.env.get('SITE_URL') || 'https://your-domain.com';
+    const baseUrl = Deno.env.get('SITE_URL') || 'https://dirajumla-publishers.com';
 
     // Generate sitemap XML - using full ISO 8601 timestamps for better indexing
     const urlEntries = (movies || []).map((movie: Movie) => {
@@ -78,24 +78,6 @@ Deno.serve(async (req) => {
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/about</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/privacy</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/terms</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>`;
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
