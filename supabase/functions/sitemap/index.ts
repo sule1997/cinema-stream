@@ -58,39 +58,16 @@ Deno.serve(async (req) => {
     // Get the base URL from environment - MUST be set for production
     const baseUrl = Deno.env.get('SITE_URL') || 'https://your-domain.com';
 
-    // Generate sitemap XML
+    // Generate sitemap XML - only using valid sitemap tags (loc, lastmod, changefreq, priority)
     const urlEntries = (movies || []).map((movie: Movie) => {
       const lastmod = new Date(movie.updated_at).toISOString().split('T')[0];
       const movieSlug = generateMovieSlug(movie.title, movie.id);
-      
-      // Build description with DJ name and episode info
-      let description = movie.dj_name;
-      if (movie.description) {
-        description += ` - ${movie.description.substring(0, 150)}`;
-      }
-      if (movie.movie_type === 'season' && movie.season_number) {
-        description += ` | Season ${movie.season_number}`;
-        if (movie.video_links && Array.isArray(movie.video_links)) {
-          description += ` (${movie.video_links.length} episodes)`;
-        }
-      }
-      
-      // Escape XML special characters
-      const escapeXml = (str: string) => {
-        return str
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&apos;');
-      };
 
       return `  <url>
     <loc>${baseUrl}/movie/${movieSlug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <description>${escapeXml(description)}</description>
   </url>`;
     }).join('\n');
 
