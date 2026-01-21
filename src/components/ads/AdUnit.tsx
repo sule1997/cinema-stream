@@ -1,4 +1,4 @@
-import { useEffect, useRef, useId } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAdsenseSettings } from '@/hooks/useAdsense';
 
 interface AdUnitProps {
@@ -9,82 +9,74 @@ interface AdUnitProps {
 export function AdUnit({ type, className = '' }: AdUnitProps) {
   const { data: settings } = useAdsenseSettings();
   const adContainerRef = useRef<HTMLDivElement>(null);
-  const adInitialized = useRef(false);
-  const uniqueId = useId();
+  const adSlotId = useRef(`ad-${type}-${Math.random().toString(36).substr(2, 9)}`);
   const adCode = type === 'display' ? settings?.displayAd : settings?.inArticleAd;
 
   useEffect(() => {
-    if (!adCode || !adContainerRef.current || adInitialized.current) return;
+    if (!adCode || !adContainerRef.current) return;
 
-    // Mark as initialized to prevent duplicate ad loading
-    adInitialized.current = true;
+    const container = adContainerRef.current;
+    
+    // Check if this container already has an initialized ad
+    const existingIns = container.querySelector('ins.adsbygoogle');
+    if (existingIns && existingIns.getAttribute('data-ad-status')) {
+      // Ad already initialized, don't reinitialize
+      return;
+    }
 
     // Clear previous content
-    adContainerRef.current.innerHTML = '';
+    container.innerHTML = '';
 
-    // Create a container for the ad
+    // Create a wrapper and inject the ad code
     const adWrapper = document.createElement('div');
     adWrapper.innerHTML = adCode;
 
     // Append all child nodes to the container
     while (adWrapper.firstChild) {
-      adContainerRef.current.appendChild(adWrapper.firstChild);
+      container.appendChild(adWrapper.firstChild);
     }
 
-    // Execute any script tags
-    const scripts = adContainerRef.current.querySelectorAll('script');
+    // Execute any script tags by replacing them with new ones
+    const scripts = container.querySelectorAll('script');
     scripts.forEach((script) => {
       const newScript = document.createElement('script');
       
-      // Copy attributes
       Array.from(script.attributes).forEach((attr) => {
         newScript.setAttribute(attr.name, attr.value);
       });
       
-      // Copy inline content
       if (script.textContent) {
         newScript.textContent = script.textContent;
       }
       
-      // Replace old script with new one to execute it
       script.parentNode?.replaceChild(newScript, script);
     });
 
-    // Push to adsbygoogle after a small delay to ensure DOM is ready
-    const pushAd = () => {
+    // Push to adsbygoogle with a delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
       try {
-        // @ts-ignore
-        if (window.adsbygoogle && adContainerRef.current?.querySelector('.adsbygoogle')) {
+        const insElement = container.querySelector('ins.adsbygoogle');
+        // Only push if the ins element exists and hasn't been initialized yet
+        if (insElement && !insElement.getAttribute('data-ad-status')) {
           // @ts-ignore
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         }
       } catch (e) {
         console.log('AdSense push error:', e);
       }
-    };
-
-    // Try immediately and also with a delay for SPA navigation
-    pushAd();
-    const timeoutId = setTimeout(pushAd, 100);
+    }, 150);
 
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [adCode, uniqueId]);
-
-  // Reset initialization when component unmounts and remounts
-  useEffect(() => {
-    return () => {
-      adInitialized.current = false;
-    };
-  }, []);
+  }, [adCode]);
 
   if (!adCode) return null;
 
   return (
     <div 
       ref={adContainerRef}
-      key={uniqueId}
+      id={adSlotId.current}
       className={`ad-unit rounded-lg overflow-hidden bg-muted/30 ${className}`}
       style={{ 
         minHeight: '90px',
