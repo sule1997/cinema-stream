@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import videojs from 'video.js';
 import Player from 'video.js/dist/types/player';
 import 'video.js/dist/video-js.css';
+import 'videojs-youtube';
 
 interface VideoPlayerProps {
   src: string;
@@ -10,6 +11,71 @@ interface VideoPlayerProps {
   autoplay?: boolean;
   onReady?: (player: Player) => void;
 }
+
+// Helper to detect YouTube URLs
+const isYouTubeUrl = (url: string): boolean => {
+  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(url);
+};
+
+// Helper to get video type based on URL/extension
+const getVideoType = (url: string): string => {
+  if (isYouTubeUrl(url)) {
+    return 'video/youtube';
+  }
+  
+  const extension = url.split('.').pop()?.toLowerCase().split('?')[0] || '';
+  
+  const typeMap: Record<string, string> = {
+    // Standard formats
+    'mp4': 'video/mp4',
+    'm4v': 'video/mp4',
+    'webm': 'video/webm',
+    'ogv': 'video/ogg',
+    'ogg': 'video/ogg',
+    
+    // Matroska
+    'mkv': 'video/x-matroska',
+    
+    // AVI
+    'avi': 'video/x-msvideo',
+    
+    // Windows Media
+    'wmv': 'video/x-ms-wmv',
+    'asf': 'video/x-ms-asf',
+    
+    // Flash (legacy)
+    'flv': 'video/x-flv',
+    'f4v': 'video/x-f4v',
+    
+    // MPEG
+    'mpeg': 'video/mpeg',
+    'mpg': 'video/mpeg',
+    'mpe': 'video/mpeg',
+    'mpv': 'video/mpeg',
+    'm2v': 'video/mpeg',
+    
+    // 3GP (mobile)
+    '3gp': 'video/3gpp',
+    '3g2': 'video/3gpp2',
+    
+    // QuickTime
+    'mov': 'video/quicktime',
+    'qt': 'video/quicktime',
+    
+    // Transport Stream
+    'ts': 'video/mp2t',
+    'm2ts': 'video/mp2t',
+    'mts': 'video/mp2t',
+    
+    // HLS
+    'm3u8': 'application/x-mpegURL',
+    
+    // DASH
+    'mpd': 'application/dash+xml',
+  };
+  
+  return typeMap[extension] || 'video/mp4';
+};
 
 const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLDivElement>(null);
@@ -23,17 +89,20 @@ const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }:
     videoElement.classList.add('vjs-big-play-centered', 'vjs-theme-dark');
     videoRef.current.appendChild(videoElement);
 
-    // Initialize player
-    const player = videojs(videoElement, {
+    const videoType = getVideoType(src);
+    const isYouTube = isYouTubeUrl(src);
+
+    // Initialize player with appropriate config
+    const playerOptions: Record<string, unknown> = {
       autoplay: autoplay,
       controls: true,
       responsive: true,
       fluid: true,
       playbackRates: [0.5, 1, 1.5, 2],
-      poster: poster,
+      poster: isYouTube ? undefined : poster,
       sources: [{
         src: src,
-        type: src.includes('.mkv') ? 'video/x-matroska' : 'video/mp4'
+        type: videoType
       }],
       controlBar: {
         children: [
@@ -48,7 +117,21 @@ const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }:
           'fullscreenToggle'
         ]
       }
-    });
+    };
+
+    // Add YouTube-specific options
+    if (isYouTube) {
+      playerOptions.techOrder = ['youtube'];
+      playerOptions.youtube = {
+        ytControls: 0,
+        modestbranding: 1,
+        rel: 0,
+        showinfo: 0,
+        iv_load_policy: 3
+      };
+    }
+
+    const player = videojs(videoElement, playerOptions);
 
     playerRef.current = player;
 
@@ -70,11 +153,12 @@ const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }:
   // Update source when src changes
   useEffect(() => {
     if (playerRef.current) {
+      const videoType = getVideoType(src);
       playerRef.current.src({
         src: src,
-        type: src.includes('.mkv') ? 'video/x-matroska' : 'video/mp4'
+        type: videoType
       });
-      if (poster) {
+      if (poster && !isYouTubeUrl(src)) {
         playerRef.current.poster(poster);
       }
     }
@@ -124,6 +208,9 @@ const VideoPlayer = ({ src, poster, className = '', autoplay = false, onReady }:
         }
         .video-player-container .vjs-remaining-time {
           display: none !important;
+        }
+        .video-player-container .vjs-youtube iframe {
+          border-radius: 0.75rem;
         }
       `}</style>
     </div>
