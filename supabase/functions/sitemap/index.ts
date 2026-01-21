@@ -58,16 +58,16 @@ Deno.serve(async (req) => {
     // Get the base URL from environment - MUST be set for production
     const baseUrl = Deno.env.get('SITE_URL') || 'https://your-domain.com';
 
-    // Generate sitemap XML - only using valid sitemap tags (loc, lastmod, changefreq, priority)
+    // Generate sitemap XML - using full ISO 8601 timestamps for better indexing
     const urlEntries = (movies || []).map((movie: Movie) => {
-      const lastmod = new Date(movie.updated_at).toISOString().split('T')[0];
+      const lastmod = new Date(movie.updated_at).toISOString();
       const movieSlug = generateMovieSlug(movie.title, movie.id);
 
       return `  <url>
     <loc>${baseUrl}/movie/${movieSlug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>`;
     }).join('\n');
 
