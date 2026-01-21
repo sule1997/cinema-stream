@@ -52,23 +52,8 @@ export function AdUnit({ type, className = '' }: AdUnitProps) {
       script.parentNode?.replaceChild(newScript, script);
     });
 
-    // Push to adsbygoogle with a delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      try {
-        const insElement = container.querySelector('ins.adsbygoogle');
-        // Only push if the ins element exists and hasn't been initialized yet
-        if (insElement && !insElement.getAttribute('data-ad-status')) {
-          // @ts-ignore
-          (window.adsbygoogle = window.adsbygoogle || []).push({});
-        }
-      } catch (e) {
-        console.log('AdSense push error:', e);
-      }
-    }, 150);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
+    // Note: We don't call push() here because the ad code already contains it
+    // The scripts are executed above which triggers the push automatically
   }, [adCode]);
 
   if (!adCode) return null;
